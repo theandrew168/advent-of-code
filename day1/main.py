@@ -1,5 +1,5 @@
 import fileinput
-from itertools import tee
+from more_itertools import sliding_window
 
 
 def part1(measurements):
@@ -14,16 +14,9 @@ def part1(measurements):
 
 
 def part2(measurements):
-    # based on:
-    # https://docs.python.org/3/library/itertools.html#itertools.pairwise
-    a, b, c = tee(measurements, 3)
-    next(b, None)
-    next(c, None)
-    next(c, None)
-
     increased = 0
     current = None
-    for mset in zip(a, b, c):
+    for mset in sliding_window(measurements, 3):
         s = sum(mset)
         if current is not None and s > current:
             increased += 1
