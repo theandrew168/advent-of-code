@@ -1,4 +1,5 @@
 # Ignore input files
+test.txt
 input.txt
 
 # Binaries for programs and plugins
