@@ -1,5 +1,6 @@
 import fileinput
 
+
 class Board:
 
     def __init__(self, numbers, size=5):
@@ -16,7 +17,8 @@ class Board:
             start = i * self.size
             end = start + self.size
             row = self.numbers[start:end]
-            s += ' '.join(str(n) for n in row)
+            fmt = '{:3d}' * len(row)
+            s += fmt.format(*row)
             s += '\n'
 
         return s
@@ -36,13 +38,13 @@ class Board:
         # check cols
         for i in range(self.size):
             start = i
-            end = self.size * (self.size - 1) + i
+            end = self.size * self.size
             step = self.size
             col = self.markers[start:end:step]
             if all(col):
                 return True
 
-        # check diag
+        return False
 
     def mark(self, number):
         if number not in self:
@@ -65,13 +67,46 @@ class Board:
 
 
 def part1(numbers, boards):
-    print(numbers)
-    for board in boards:
-        print(board)
+    winning_board = None
+    winning_number = None
+    for number in numbers:
+        if winning_board:
+            break
+        for board in boards:
+            board.mark(number)
+            if board.is_winner():
+                winning_board = board
+                winning_number = number
+                break
+
+    _, unmarked = winning_board.marked_unmarked()
+    return winning_number * sum(unmarked)
 
 
-def part2():
-    pass
+def part2(numbers, boards):
+    winners = []
+    winning_board = None
+    winning_number = None
+    for number in numbers:
+        for board in boards:
+            board.mark(number)
+
+        remaining = []
+        for board in boards:
+            if board.is_winner():
+                winners.append(board)
+            else:
+                remaining.append(board)
+
+        if not remaining:
+            winning_board = winners[-1]
+            winning_number = number
+            break
+
+        boards = remaining
+
+    _, unmarked = winning_board.marked_unmarked()
+    return winning_number * sum(unmarked)
 
 
 if __name__ == '__main__':
@@ -99,4 +134,4 @@ if __name__ == '__main__':
     boards.append(board)
 
     print(part1(numbers, boards))
-    print(part2())
+    print(part2(numbers, boards))
