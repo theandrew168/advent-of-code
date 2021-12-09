@@ -29,6 +29,34 @@ class Grid:
 
         return adj
 
+    def fill(self, x, y, seen=None):
+        if seen is None:
+            seen = set()
+
+        p = self.get(x, y)
+        if p == 9:
+            return seen
+
+        seen.add((x, y))
+
+        for offset in [-1, 1]:
+            xx = x + offset
+            if xx < 0 or xx >= self.width:
+                continue
+            if (xx, y) in seen:
+                continue
+            seen.update(self.fill(xx, y, seen))
+
+        for offset in [-1, 1]:
+            yy = y + offset
+            if yy < 0 or yy >= self.height:
+                continue
+            if (x, yy) in seen:
+                continue
+            seen.update(self.fill(x, yy, seen))
+
+        return seen
+
 
 def part1(grid):
     lows = []
@@ -43,7 +71,21 @@ def part1(grid):
 
 
 def part2(grid):
-    pass
+    basins = set()
+    for y in range(grid.height):
+        for x in range(grid.width):
+            basin = grid.fill(x, y)
+            if len(basin) == 0:
+                continue
+            basins.add(frozenset(basin))
+
+    largest = [b for b in sorted(basins, key=len, reverse=True)]
+
+    answer = 1
+    for b in largest[:3]:
+        answer *= len(b)
+
+    return answer
 
 
 if __name__ == '__main__':
