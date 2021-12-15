@@ -9,12 +9,16 @@ class Cave:
         self.width = width
         self.height = height
 
-    def __str__(self):
-        s = ''
+    def __iter__(self):
         for y in range(self.height):
             start = y * self.width
             end = start + self.width
             row = self.data[start:end]
+            yield row
+
+    def __str__(self):
+        s = ''
+        for row in iter(self):
             s += ''.join(str(n) for n in row) + '\n'
         return s
 
@@ -40,43 +44,78 @@ class Cave:
         costs = {(x, y): None for y in range(self.width)
                               for x in range(self.height)}
         costs[start_node] = 0
-    
+
         pq = PriorityQueue()
         pq.put((0, start_node))
-    
+
         # iterate until all nodes have been visited
         visited = set()
         while not pq.empty():
             (dist, cur_node) = pq.get()
             visited.add(cur_node)
-            for adj in cave.adj(*cur_node):
-                cost = costs[cur_node] + cave.get(*adj)
+            for adj in self.adj(*cur_node):
+                cost = costs[cur_node] + self.get(*adj)
                 if costs[adj] is None or cost < costs[adj]:
                     pq.put((cost, adj))
                     costs[adj] = cost
-    
+
         # reverse traverse the path
         path = []
         node = end_node
         while node != start_node:
             path.append(node)
+
             # follow the lowest adjacent costs
-            nodes = [((x, y), costs[(x, y)]) for x, y in cave.adj(*node)]
+            nodes = [((x, y), costs[(x, y)]) for x, y in self.adj(*node)]
             node = sorted(nodes, key=lambda n: n[1])[0]
             node = node[0]
-    
+
         return reversed(path)
+
+    def expand(self):
+        data = []
+
+        # expand horizontally
+        for row in iter(self):
+            for i in range(5):
+                for e in row:
+                    e = e + i
+                    if e > 9:
+                        e -= 9
+                    data.append(e)
+
+        wide = Cave(data, self.width * 5, self.height)
+
+        # expand vertically
+        data = []
+        for i in range(5):
+            for row in iter(wide):
+                for e in row:
+                    e = e + i
+                    if e > 9:
+                         e -= 9
+                    data.append(e)
+
+        tall = Cave(data, self.width * 5, self.height * 5)
+        return tall
 
 
 def part1(cave):
     start_node = (0, 0)
     end_node = (cave.width - 1, cave.height - 1)
+
     path = cave.shortest_path(start_node, end_node)
     return sum(cave.get(*node) for node in path)
 
 
 def part2(cave):
-    pass
+    cave = cave.expand()
+
+    start_node = (0, 0)
+    end_node = (cave.width - 1, cave.height - 1)
+
+    path = cave.shortest_path(start_node, end_node)
+    return sum(cave.get(*node) for node in path)
 
 
 if __name__ == '__main__':
