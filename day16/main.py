@@ -8,12 +8,29 @@ OpNumber = namedtuple('OpNumber', 'version type id number bits')
 
 class Packet:
 
-    def __init__(self, version, type):
+    def __init__(self, version, type, bits, *, value=None, id=None, children=None):
         self.version = version
         self.type = type
+        self.bits = bits
 
-        self.value = None
-        self.children = []
+        self.value = value
+        self.id = id
+        self.children = children or []
+
+    def pprint(self, depth=0):
+        pad = ' ' * depth
+        print(pad + str(self))
+        for c in self.children:
+            c.pprint(depth + 1)
+
+    def __str__(self):
+        s = '{} {} '.format(self.version, self.type)
+        if self.value:
+            s += str(self.value) + ' '
+        else:
+            s += str(self.id) + ' '
+        s += str(self.bits)
+        return s
 
 
 def decode(bits):
@@ -37,8 +54,8 @@ def decode(bits):
                     break
 
             value = int(value, base=2)
-            p = Literal(v, t, value, pbits)
-            yield p
+            packet = Packet(v, t, pbits, value=value)
+            return packet
 
         # operator (recursion)
         else:
@@ -51,70 +68,96 @@ def decode(bits):
                 l, bits = bits[:15], bits[15:]
                 l = int(l, base=2)
 
-                yield OpLength(v, t, i, l, pbits)
-                yield from decode(bits[:l])
+                size = 0
+                children = []
+                while size < l:
+                    c = decode(bits[size:l])
+                    children.append(c)
+                    size += len(c.bits)
+                    pbits += c.bits
+
                 bits = bits[l:]
+                return Packet(v, t, pbits, id=i, children=children)
             else:
                 pbits += bits[:11]
                 n, bits = bits[:11], bits[11:]
                 n = int(n, base=2)
 
-                yield OpNumber(v, t, i, n, pbits)
-
                 size = 0
-                for i, s in enumerate(decode(bits)):
-                    if i >= n:
-                        break
-                    size += len(s.bits)
-                    yield s
+                count = 0
+                children = []
+                while count < n:
+                    c = decode(bits[size:])
+                    children.append(c)
+                    size += len(c.bits)
+                    pbits += c.bits
+                    count += 1
 
                 bits = bits[size:]
+                packet = Packet(v, t, pbits, id=i, children=children)
+                return packet
 
 
-def part1(bits):
-    return sum(p.version for p in decode(bits))
+def score1(p):
+    res = p.version
+    for c in p.children:
+        res += score1(c)
+    return res
 
 
-def pcount(p, ps):
-    if isinstance(p, OpNumber):
-        return p.number
-
-    count = 0
-    size = 0
-    while size < p.length:
-        size += len(ps[count]).bits
-        count += 1
-
-    return count
+def part1(p):
+    return score1(p)
 
 
-def treeify(ps):
-    head, tail = ps[0], ps[1:]
-    if head.type == 4:
-        return head.value
-    else:
-        return list(treeify(tail))
+def score2(p):
+    if p.type == 0:
+        res = 0
+        for c in p.children:
+            res += score2(c)
+        return res
+
+    if p.type == 1:
+        res = 1
+        for c in p.children:
+            res *= score2(c)
+        return res
+
+    if p.type == 2:
+        res = []
+        for c in p.children:
+            res.append(score2(c))
+        return min(res)
+
+    if p.type == 3:
+        res = []
+        for c in p.children:
+            res.append(score2(c))
+        return max(res)
+
+    if p.type == 4:
+        return p.value
+
+    if p.type == 5:
+        res = []
+        for c in p.children:
+            res.append(score2(c))
+        return res[0] > res[1]
+
+    if p.type == 6:
+        res = []
+        for c in p.children:
+            res.append(score2(c))
+        return res[0] < res[1]
+
+    if p.type == 7:
+        res = []
+        for c in p.children:
+            res.append(score2(c))
+        return res[0] == res[1]
 
 
-def peval(ps):
-    head, tail = ps[0], ps[1:]
-    if head.type == 4:
-        return head.value
-
-    count = pcount(head, tail)
-    ps = tail[:count]
-
-    print(count, ps)
-#    if head.type == 0:
-#        res = 0
-#        for p in ps:
-#            res += peval(p
-
-
-def part2(bits):
-    ps = list(decode(bits))
-    print(treeify(ps))
-    return peval(ps)
+def part2(p):
+    return score2(p)
 
 
 if __name__ == '__main__':
@@ -128,8 +171,6 @@ if __name__ == '__main__':
         n = int(h, base=16)
         bits += '{:04b}'.format(n)
 
-    for p in decode(bits):
-        print(p)
-
-    print(part1(bits))
-    print(part2(bits))
+    p = decode(bits)
+    print(part1(p))
+    print(part2(p))
