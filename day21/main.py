@@ -1,6 +1,7 @@
 from collections import defaultdict
 import fileinput
-from itertools import cycle, islice, permutations, product
+from functools import lru_cache
+from itertools import cycle, islice, product
 
 
 def part1(op1, op2):
@@ -25,70 +26,60 @@ def part1(op1, op2):
     return min(s1, s2) * dc
 
 
-def setp(d, i):
-    if len(i) == 1:
-        d[i[0]] = None
+@lru_cache(maxsize=4096)
+def apply_roll(p, s, r):
+    p = (p + r) % 10
+    s += p + 1
+    return p, s
+
+
+def play(op1, op2, os1, os2, uc, turn, hist):
+    # base case: found a winner
+    # loop: roll each option
+    # recur: chosen option (zigzags between p1 and p2)
+
+    w1, w2 = 0, 0
+    if turn % 2 == 1:
+        for roll, combos in hist.items():
+            p1, s1 = apply_roll(op1, os1, roll)
+            nuc = uc * len(combos)
+            if s1 >= 21:
+                w1 += nuc
+            else:
+                ww1, ww2 = play(p1, op2, s1, os2, nuc, turn + 1, hist)
+                w1 += ww1
+                w2 += ww2
     else:
-        if i[0] not in d:
-            d[i[0]] = {}
-        setp(d[i[0]], i[1:])
+        for roll, combos in hist.items():
+            p2, s2 = apply_roll(op2, os2, roll)
+            nuc = uc * len(combos)
+            if s2 >= 21:
+                w2 += nuc
+            else:
+                ww1, ww2 = play(op1, p2, os1, s2, nuc, turn + 1, hist)
+                w1 += ww1
+                w2 += ww2
+
+    return w1, w2
 
 
-def ucount(d, hist, depth=27):
-    if d is None:
-        return 0
-
-    uc = 0
-    for k in d:
-        uc += len(hist[k]) * depth
-
-    for k, sub in d.items():
-        uc += len(hist[k]) * ucount(sub, hist, depth * 27)
-
-    return uc
-
+# 3 1 [(1, 1, 1)]
+# 4 3 [(1, 1, 2), (1, 2, 1), (2, 1, 1)]
+# 5 6 [(1, 1, 3), (1, 2, 2), (1, 3, 1), (2, 1, 2), (2, 2, 1), (3, 1, 1)]
+# 6 7 [(1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 2, 2), (2, 3, 1), (3, 1, 2), (3, 2, 1)]
+# 7 6 [(1, 3, 3), (2, 2, 3), (2, 3, 2), (3, 1, 3), (3, 2, 2), (3, 3, 1)]
+# 8 3 [(2, 3, 3), (3, 2, 3), (3, 3, 2)]
+# 9 1 [(3, 3, 3)]
 
 def part2(op1, op2):
     rolls = [p for p in product(range(1, 4), range(1, 4), range(1, 4))]
 
-    c = defaultdict(list)
+    hist = defaultdict(list)
     for roll in rolls:
-        c[sum(roll)].append(roll)
+        hist[sum(roll)].append(roll)
 
-    outcomes = list(c)
-    perms = permutations(outcomes)
-
-    w1, w2 = set(), set()
-    for perm in perms:
-        p1, p2 = op1, op2
-        s1, s2 = 0, 0
-
-        for i, p in enumerate(perm):
-            p1 = (p1 + p) % 10
-            s1 += p1 + 1
-            if s1 >= 21:
-                w1.add(perm[:i + 1])
-                break
-
-            p2 = (p2 + p) % 10
-            s2 += p2 + 1
-            if s2 >= 21:
-                w2.add(perm[:i + 1])
-                break
-
-    for k, v in c.items():
-        print(k, v)
-
-    print(w1)
-    print(w2)
-
-    d = {}
-    for w in w1:
-        setp(d, w)
-    print(d)
-    for k, v in d.items():
-        print(k, v)
-    print(ucount(d, c))
+    scores = play(op1, op2, 0, 0, 1, 1, hist)
+    return max(scores)
 
 
 if __name__ == '__main__':
