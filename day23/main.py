@@ -19,47 +19,41 @@ ROOMS = {
 }
 
 # hallway slots
-SLOTS = [3, 5, 7, 1, 9, 0, 10]
-
-BURROW = """
-#############
-#{}#
-###{}#{}#{}#{}###
-  #{}#{}#{}#{}#
-  #########
-"""
+SLOTS = [0, 1, 3, 5, 7, 9, 10]
 
 
 class State:
 
-    def __init__(self, hall, rooms, energy=0, prev=None):
+    def __init__(self, hall, rooms, energy=0):
         self.hall = hall
         self.rooms = rooms
-
         self.energy = energy
-        self.prev = prev
 
     @property
     def solved(self):
-        want = [['A', 'A'], ['B', 'B'], ['C', 'C'], ['D', 'D']]
+        size = len(self.rooms[0])
+        want = [['A'] * size, ['B'] * size, ['C'] * size, ['D'] * size]
         return str(self.rooms) == str(want)
 
     def __str__(self):
+        lines = [
+            '#############',
+        ]
+
         hall = ''.join(slot or '.' for slot in self.hall)
-        r00 = self.rooms[0][0] or '.'
-        r01 = self.rooms[0][1] or '.'
-        r10 = self.rooms[1][0] or '.'
-        r11 = self.rooms[1][1] or '.'
-        r20 = self.rooms[2][0] or '.'
-        r21 = self.rooms[2][1] or '.'
-        r30 = self.rooms[3][0] or '.'
-        r31 = self.rooms[3][1] or '.'
+        lines.append('#' + hall + '#')
 
-        s = BURROW.format(hall, r00, r10, r20, r30, r01, r11, r21, r31)
-        return s.strip()
+        for i in range(len(self.rooms[0])):
+            s = '###{}#{}#{}#{}###' if i == 0 else '  #{}#{}#{}#{}#'
+            r0 = self.rooms[0][i] or '.'
+            r1 = self.rooms[1][i] or '.'
+            r2 = self.rooms[2][i] or '.'
+            r3 = self.rooms[3][i] or '.'
+            s = s.format(r0, r1, r2, r3)
+            lines.append(s)
 
-    def __hash__(self):
-        return hash((str(self.hall), str(self.rooms)))
+        lines.append('  #########')
+        return '\n'.join(lines)
 
     def __lt__(self, other):
         return self.energy < other.energy
@@ -69,49 +63,7 @@ class State:
         blocks = [slot for slot in SLOTS if self.hall[slot]]
 
         if self.solved:
-            raise StopIteration
-
-        # room to hall
-        for ri, room in enumerate(self.rooms):
-            entry = (ri + 1) * 2
-
-            # room is done
-            if all(r == ROOMS[ri] for r in room):
-                continue
-
-            for ai, amph in enumerate(room):
-                # room spot is empty
-                if not amph:
-                    continue
-                # amph is blocked into their room
-                if ai == 1 and room[0]:
-                    continue
-                # amph is in the correct spot
-                if ai == 1 and room[1] == ROOMS[ri]:
-                    continue
-
-                # try each possible hallway slot
-                for slot in SLOTS:
-                    # hall spot is taken
-                    if self.hall[slot]:
-                        continue
-                    # check for blocks (right)
-                    if any(b < slot and b > entry for b in blocks):
-                        continue
-                    # check for blocks (left)
-                    if any(b > slot and b < entry for b in blocks):
-                        continue
-
-                    hall = [h for h in self.hall]
-                    hall[slot] = amph
-                    rooms = [r.copy() for r in self.rooms]
-                    rooms[ri][ai] = None
-
-                    dist = (ai + 1) + abs(slot - entry)
-                    energy = dist * COSTS[amph]
-                    energy = self.energy + energy
-
-                    yield State(hall, rooms, energy, prev=self)
+            return
 
         # hall to room
         for slot, amph in enumerate(self.hall):
@@ -139,7 +91,10 @@ class State:
                 if any(b > slot and b < entry for b in blocks):
                     continue
 
-                ai = 0 if room[1] else 1
+                if want in room:
+                    ai = room.index(want) - 1
+                else:
+                    ai = len(self.rooms[0]) - 1
                 hall = [h for h in self.hall]
                 hall[slot] = None
                 rooms = [r.copy() for r in self.rooms]
@@ -149,46 +104,98 @@ class State:
                 energy = dist * COSTS[amph]
                 energy = self.energy + energy
 
-                yield State(hall, rooms, energy, prev=self)
+                yield State(hall, rooms, energy)
+
+        # room to hall
+        for ri, room in enumerate(self.rooms):
+            entry = (ri + 1) * 2
+
+            # room is done for now
+            if all(r == ROOMS[ri] for r in room if r):
+                continue
+
+            for ai, amph in enumerate(room):
+                # room spot is empty
+                if not amph:
+                    continue
+                # amph is blocked into their room
+                if any(ai == i + 1 and room[i] for i in range(len(self.rooms) - 1)):
+                    continue
+
+                # try each possible hallway slot
+                for slot in SLOTS:
+                    # hall spot is taken
+                    if self.hall[slot]:
+                        continue
+                    # check for blocks (right)
+                    if any(b < slot and b > entry for b in blocks):
+                        continue
+                    # check for blocks (left)
+                    if any(b > slot and b < entry for b in blocks):
+                        continue
+
+                    hall = [h for h in self.hall]
+                    hall[slot] = amph
+                    rooms = [r.copy() for r in self.rooms]
+                    rooms[ri][ai] = None
+
+                    dist = (ai + 1) + abs(slot - entry)
+                    energy = dist * COSTS[amph]
+                    energy = self.energy + energy
+
+                    yield State(hall, rooms, energy)
 
 
 # treat this sort of like Dijkstra's
 # tracing out the tree of potential moves
 # updating similar states if the energy cost is lower
-# somehow keep a ref to previous move
 def solve(state):
     pq = PriorityQueue()
     pq.put((0, state))
 
     # keep track of the best ways to reach each game state
     best = {}
-    best[state] = 0
+    best[str(state)] = 0
 
     visited = set()
     while not pq.empty():
         e, s = pq.get()
-        visited.add(s)
+        visited.add(str(s))
         for ns in s:
-            if ns in visited:
+            if str(ns) in visited:
                 continue
-            print(s)
-            print(ns)
-            print()
-            total = best[s] + ns.energy
-            if ns not in best or total < best[ns]:
+            total = ns.energy
+            if str(ns) not in best or total < best[str(ns)]:
                 pq.put((total, ns))
-                best[ns] = total
+                best[str(ns)] = total
 
-    idx = [i for i in best if best[i].solved][0]
-    return best[idx]
+    return best
 
 
 def part1(state):
-    return solve(state)
+    best = solve(state)
+
+    hall = [None,] * 11
+    r1 = ['A', 'A']
+    r2 = ['B', 'B']
+    r3 = ['C', 'C']
+    r4 = ['D', 'D']
+    want = State(hall, [r1, r2, r3, r4])
+
+    return best[str(want)]
 
 
 def part2(state):
-    pass
+    best = solve(state)
+
+    hall = [None,] * 11
+    r1 = ['A', 'A', 'A', 'A']
+    r2 = ['B', 'B', 'B', 'B']
+    r3 = ['C', 'C', 'C', 'C']
+    r4 = ['D', 'D', 'D', 'D']
+    want = State(hall, [r1, r2, r3, r4])
+
+    return best[str(want)]
 
 
 if __name__ == '__main__':
@@ -197,11 +204,17 @@ if __name__ == '__main__':
         lines.append(line)
 
     hall = [None,] * 11
+
     r1 = [lines[2][3], lines[3][3]]
     r2 = [lines[2][5], lines[3][5]]
     r3 = [lines[2][7], lines[3][7]]
     r4 = [lines[2][9], lines[3][9]]
-
     state = State(hall, [r1, r2, r3, r4])
     print(part1(state))
-    print(part2(state))
+
+    r1 = [r1[0], 'D', 'D', r1[1]]
+    r2 = [r2[0], 'C', 'B', r2[1]]
+    r3 = [r3[0], 'B', 'A', r3[1]]
+    r4 = [r4[0], 'A', 'C', r4[1]]
+    state2 = State(hall, [r1, r2, r3, r4])
+    print(part2(state2))
