@@ -51,6 +51,9 @@ class Cave:
         # iterate until all nodes have been visited
         while not pq.empty():
             (dist, cur_node) = pq.get()
+            # skip worse options
+            if dist > costs[cur_node]:
+                continue
             for adj in self.adj(*cur_node):
                 cost = costs[cur_node] + self.get(*adj)
                 if costs[adj] is None or cost < costs[adj]:

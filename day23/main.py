@@ -1,5 +1,4 @@
 import fileinput
-from functools import cache
 from queue import PriorityQueue
 
 # movement costs
@@ -159,6 +158,9 @@ def solve(state):
 
     while not pq.empty():
         e, s = pq.get()
+        # skip worse options
+        if e > best[str(s)]:
+            continue
         for ns in s:
             total = ns.energy
             if str(ns) not in best or total < best[str(ns)]:
