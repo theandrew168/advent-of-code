@@ -69,27 +69,21 @@ class Cuboid:
 
         # carve along yz plane
         rem = self
-#        print(rem)
         xa = Cuboid(rem.x0, other.x0 - 1,  rem.y0, rem.y1,  rem.z0, rem.z1)
         xb = Cuboid(other.x0, other.x1,    rem.y0, rem.y1,  rem.z0, rem.z1)
         xc = Cuboid(other.x1 + 1, rem.x1,  rem.y0, rem.y1,  rem.z0, rem.z1)
-#        print('x', xa, xb, xc)
 
         # carve along xz plane
         rem = xb
-#        print(rem)
         ya = Cuboid(rem.x0, rem.x1,  rem.y0, other.y0 - 1,  rem.z0, rem.z1)
         yb = Cuboid(rem.x0, rem.x1,  other.y0, other.y1,    rem.z0, rem.z1)
         yc = Cuboid(rem.x0, rem.x1,  other.y1 + 1, rem.y1,  rem.z0, rem.z1)
-#        print('y', ya, yb, yc)
 
         # carve along xy plane
         rem = yb
-#        print(rem)
         za = Cuboid(rem.x0, rem.x1,  rem.y0, rem.y1,  rem.z0, other.z0 - 1)
         zb = Cuboid(rem.x0, rem.x1,  rem.y0, rem.y1,  other.z0, other.z1)
         zc = Cuboid(rem.x0, rem.x1,  rem.y0, rem.y1,  other.z1 + 1, rem.z1)
-#        print('z', za, zb, zc)
 
         assert len(zb) == len(other)
 
