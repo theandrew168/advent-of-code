@@ -157,13 +157,9 @@ def solve(state):
     best = {}
     best[str(state)] = 0
 
-    visited = set()
     while not pq.empty():
         e, s = pq.get()
-        visited.add(str(s))
         for ns in s:
-            if str(ns) in visited:
-                continue
             total = ns.energy
             if str(ns) not in best or total < best[str(ns)]:
                 pq.put((total, ns))
