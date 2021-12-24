@@ -9,23 +9,30 @@ class Inst:
         self.src = src
 
     def __str__(self):
-        return self.name
+        s = '({!s} {!s} {!s})'
+        return s.format(self.name, self.dst, self.src)
 
     def __repr__(self):
-        return 'Inst({!r}, {!r}, {!r})'.format(self.name, self.dst, self.src)
+        s = 'Inst({!r}, {!r}, {!r})'
+        return s.format(self.name, self.dst, self.src)
 
 
 # build an AST and do some analysis
 def part1(lines):
+    inputs = sum(1 for line in lines if 'inp' in line)
+
     regs = [None] * 4
     for line in reversed(lines):
         name, dst, *src = line.split()
         if len(src) == 1:
             src = src[0]
         else:
-            src = 'i'
+            # will be an inp inst here
+            inputs -= 1
+            src = 'input_{}'.format(inputs)
 
         inst = Inst(name, dst, src)
+        print(inst)
 
         # build a graph of instructions
         idx = 'wxyz'.index(dst)
@@ -35,8 +42,9 @@ def part1(lines):
             inst.src = regs[idx2]
         regs[idx] = inst
 
-    for r in regs:
-        print(repr(r))
+    print(repr(regs[3]))
+#    for r in regs:
+#        print(repr(r))
 
     return 42
 
