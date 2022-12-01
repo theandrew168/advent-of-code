@@ -1,6 +1,6 @@
 # Ignore input files
 test*.txt
-input.txt
+input*.txt
 
 # Binaries for programs and plugins
 *.exe
