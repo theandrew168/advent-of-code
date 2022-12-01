@@ -8,6 +8,7 @@ def part1(lines):
     cals = [sum(int(n) for n in food) for food in foods]
     return max(cals)
 
+
 def part2(lines):
     foods = list(split_at(lines, lambda x: x == ''))
     cals = [sum(int(n) for n in food) for food in foods]
