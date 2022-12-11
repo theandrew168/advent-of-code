@@ -81,16 +81,13 @@ def part2(lines):
     monkeys = parse(lines)
     divs = [m.test.divisible for m in monkeys]
     lcm = math.lcm(*divs)
-    print(lcm)
     for r in range(10000):
-        print(f'round {r}')
         for monkey in monkeys:
             while monkey.items:
                 item = monkey.items.pop(0)
                 monkey.inspections += 1
                 new_item = worry(item, monkey.op)
-                if new_item >= lcm:
-                    new_item //= lcm 
+                new_item %= lcm
                 throw = check(new_item, monkey.test)
                 monkeys[throw].items.append(new_item)
 
