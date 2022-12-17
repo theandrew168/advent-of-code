@@ -1,10 +1,10 @@
 from collections import defaultdict
 import fileinput
-from itertools import combinations, product
+from itertools import groupby, product
 from pprint import pprint
 import re
 
-from more_itertools import distribute, windowed
+from more_itertools import windowed
 
 
 def build_graph(lines):
@@ -78,7 +78,7 @@ def build_paths(graph, clique, path, time=0, limit=30):
         # build new clique without current node
         new_clique = {k: v for k, v in clique.items() if current not in k}
 
-        yield from build_paths(graph, new_clique, new_path, new_time)
+        yield from build_paths(graph, new_clique, new_path, new_time, limit)
 
 
 def pressure(graph, clique, path):
@@ -113,21 +113,17 @@ def pressure2(graph, clique, pa, pb):
         time += t
         paths.append((time, b))
 
-    #print(sorted(paths))
-
     total = 0
     rate = 0
 
-    time = 0
-    for t, v in sorted(paths):
-        if t >= 26:
-            return total
-        total += rate * (t - time)
-        time = t
-        rate += graph[v]['flow']
-
-    if time < 26:
-        total += rate * (26 - time)
+    paths = sorted(paths)
+#    print(paths)
+    for t in range(1, 26 + 1):
+#        print(t, rate)
+        total += rate
+        while paths and paths[0][0] == t:
+            p = paths.pop(0)
+            rate += graph[p[1]]['flow']
 
     return total
 
@@ -145,17 +141,41 @@ def part1(lines):
     return best
 
 
+# 2336 low
+# 2532 low
+# 2533 ???
+# 2534 ???
+# 2733 ???
+# 2942 ???
 def part2(lines):
     graph = build_graph(lines)
     clique = build_clique(graph)
 
+#    print(pressure2(graph, clique,
+#        ['AA', 'JJ', 'BB', 'CC'],
+#        ['AA', 'DD', 'HH', 'EE'],
+#    ))
+
     best = 0
+    best_path = None
     for path in build_paths(graph, clique, ['AA'], limit=26):
         p = pressure(graph, clique, path)
         if p > best:
             best = p
+            best_path = path
 
-    return best
+    bps = set(best_path) - set(['AA'])
+    new_clique = {k: v for k, v in clique.items() if not k & bps}
+
+    best2 = 0
+    best2_path = None
+    for path in build_paths(graph, new_clique, ['AA'], limit=26):
+        p = pressure(graph, clique, path)
+        if p > best2:
+            best2 = p
+            best2_path = path
+
+    return pressure2(graph, clique, best_path, best2_path)
 
 
 if __name__ == '__main__':
@@ -163,5 +183,5 @@ if __name__ == '__main__':
     for line in fileinput.input():
         lines.append(line.strip())
 
-    print(part1(lines))
+    #print(part1(lines))
     print(part2(lines))
