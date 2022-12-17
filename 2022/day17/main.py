@@ -116,23 +116,24 @@ def down(board, points):
     return moved, True
 
 
-def display(board):
-    lines = defaultdict(set)
-    for p in board:
-        lines[p.y].add(p.x)
+def display(lines, start, count):
+    end = start + count
 
-    print(lines)
-    for y in reversed(sorted(lines.keys())):
-        s = ''
+    s = []
+    for y in sorted(lines.keys())[start:end]:
+
+        l = ''
         for x in range(WIDTH):
             if x in lines[y]:
-                s += '#'
+                l += '#'
             else:
-                s += '.'
-        print(s)
+                l += '.'
+        s.append(l)
+
+    return '\n'.join(reversed(s))
 
 
-def solve(line, limit):
+def part1(line):
     board = set()
     origin = Point(2, 3)
     pieces = cycle([p1, p2, p3, p4, p5])
@@ -159,8 +160,73 @@ def solve(line, limit):
             active = piece(origin)
             rocks += 1
 
-        if rocks >= limit:
+        if rocks >= 2022:
             return highest + 1
+
+
+# 1566984124796 high
+def part2(line):
+    board = set()
+    origin = Point(2, 3)
+    pieces = cycle([p1, p2, p3, p4, p5])
+    highest = 0
+    rocks = 0
+
+    lines = defaultdict(set)
+    heights = {}
+
+    piece = next(pieces)
+    active = piece(origin)
+
+    for c in cycle(line):
+        if c == '<':
+            active, _ = left(board, active)
+        else:
+            active, _ = right(board, active)
+
+        active, moved = down(board, active)
+        if not moved:
+            top = max(p.y for p in active)
+            if top > highest:
+                highest = top
+                heights[highest] = rocks
+
+            for p in active:
+                lines[p.y].add(p.x)
+
+            board |= active
+            origin = Point(2, highest + 4)
+            piece = next(pieces)
+            active = piece(origin)
+            rocks += 1
+
+            # simulate the first few rocks
+            if rocks >= 3000:
+                break
+
+    chunk = 10
+    start_height = None
+    end_height = None
+    for i in range(1000):
+        pattern = display(lines, i, chunk)
+        for j in range(i + 1, highest):
+            check = display(lines, j, chunk)
+            if check == pattern:
+                print('pattern:', i)
+                print(pattern)
+                print('found at height:', j)
+                start_height = i
+                end_height = j
+                break
+
+        if start_height:
+            break
+
+    cycle_height = end_height - start_height
+    start_rocks = heights[min(k for k in heights if k >= start_height)]
+    rps = heights[min(k for k in heights if k >= end_height)] - heights[min(k for k in heights if k >= start_height)]
+    cs = (1000000000000 - start_rocks) // rps
+    return start_height + (cs * cycle_height) 
 
 
 if __name__ == '__main__':
@@ -168,5 +234,5 @@ if __name__ == '__main__':
     for line in fileinput.input():
         line = line.strip()
 
-    print(solve(line, 2022))
-    #print(solve(line, 1000000000))
+    print(part1(line))
+    print(part2(line))
