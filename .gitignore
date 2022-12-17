@@ -1,6 +1,7 @@
 # Ignore input files
 test*.txt
 input*.txt
+main2.py
 
 # Binaries for programs and plugins
 *.exe

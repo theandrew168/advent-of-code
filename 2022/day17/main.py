@@ -165,6 +165,8 @@ def part1(line):
 
 
 # 1566984124796 high
+# 1566272189352
+# 1566272188766 low
 def part2(line):
     board = set()
     origin = Point(2, 3)
@@ -201,10 +203,10 @@ def part2(line):
             rocks += 1
 
             # simulate the first few rocks
-            if rocks >= 3000:
+            if rocks >= 5000:
                 break
 
-    chunk = 10
+    chunk = 25
     start_height = None
     end_height = None
     for i in range(1000):
