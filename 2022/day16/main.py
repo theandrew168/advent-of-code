@@ -141,41 +141,21 @@ def part1(lines):
     return best
 
 
-# 2336 low
-# 2532 low
-# 2533 ???
-# 2534 ???
-# 2733 ???
-# 2942 ???
 def part2(lines):
     graph = build_graph(lines)
     clique = build_clique(graph)
 
-#    print(pressure2(graph, clique,
-#        ['AA', 'JJ', 'BB', 'CC'],
-#        ['AA', 'DD', 'HH', 'EE'],
-#    ))
-
     best = 0
-    best_path = None
     for path in build_paths(graph, clique, ['AA'], limit=26):
-        p = pressure(graph, clique, path)
-        if p > best:
-            best = p
-            best_path = path
+        ps = set(path) - set(['AA'])
+        new_clique = {k: v for k, v in clique.items() if not k & ps}
+        for path2 in build_paths(graph, new_clique, ['AA'], limit=26):
+            p = pressure2(graph, clique, path, path2)
+            if p > best:
+                print(p, path, path2)
+                best = p
 
-    bps = set(best_path) - set(['AA'])
-    new_clique = {k: v for k, v in clique.items() if not k & bps}
-
-    best2 = 0
-    best2_path = None
-    for path in build_paths(graph, new_clique, ['AA'], limit=26):
-        p = pressure(graph, clique, path)
-        if p > best2:
-            best2 = p
-            best2_path = path
-
-    return pressure2(graph, clique, best_path, best2_path)
+    return best
 
 
 if __name__ == '__main__':
@@ -183,5 +163,5 @@ if __name__ == '__main__':
     for line in fileinput.input():
         lines.append(line.strip())
 
-    #print(part1(lines))
+    print(part1(lines))
     print(part2(lines))
