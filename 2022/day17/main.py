@@ -1,234 +1,80 @@
-from collections import defaultdict, namedtuple
 import fileinput
-from itertools import cycle
-
-
-WIDTH = 7
-
-Point = namedtuple('Point', 'x y')
-
-
-def p1(o):
-    """
-    ####
-    """
-    ps = [
-        Point(o.x, o.y),
-        Point(o.x + 1, o.y),
-        Point(o.x + 2, o.y),
-        Point(o.x + 3, o.y),
-    ]
-    return set(ps)
-
-
-def p2(o):
-    """
-    .#.
-    ###
-    .#.
-    """
-    ps = [
-        Point(o.x + 1, o.y),
-        Point(o.x, o.y + 1),
-        Point(o.x + 1, o.y + 1),
-        Point(o.x + 2, o.y + 1),
-        Point(o.x + 1, o.y + 2),
-    ]
-    return set(ps)
-
-
-def p3(o):
-    """
-    ..#
-    ..#
-    ###
-    """
-    ps = [
-        Point(o.x, o.y),
-        Point(o.x + 1, o.y),
-        Point(o.x + 2, o.y),
-        Point(o.x + 2, o.y + 1),
-        Point(o.x + 2, o.y + 2),
-    ]
-    return set(ps)
-
-
-def p4(o):
-    """
-    #
-    #
-    #
-    #
-    """
-    ps = [
-        Point(o.x, o.y),
-        Point(o.x, o.y + 1),
-        Point(o.x, o.y + 2),
-        Point(o.x, o.y + 3),
-    ]
-    return set(ps)
-
-
-def p5(o):
-    """
-    ##
-    ##
-    """
-    ps = [
-        Point(o.x, o.y),
-        Point(o.x + 1, o.y),
-        Point(o.x, o.y + 1),
-        Point(o.x + 1, o.y + 1),
-    ]
-    return set(ps)
-
-
-def left(board, points):
-    if min(p.x for p in points) <= 0:
-        return points, False
-
-    moved = set(Point(p.x - 1, p.y) for p in points)
-    if board & moved:
-        return points, False
-
-    return moved, True
-
-
-def right(board, points):
-    if max(p.x for p in points) >= WIDTH - 1:
-        return points, False
-
-    moved = set(Point(p.x + 1, p.y) for p in points)
-    if board & moved:
-        return points, False
-
-    return moved, True
-
-
-def down(board, points):
-    if min(p.y for p in points) <= 0:
-        return points, False
-
-    moved = set(Point(p.x, p.y - 1) for p in points)
-    if board & moved:
-        return points, False
-
-    return moved, True
-
-
-def display(lines, start, count):
-    end = start + count
-
-    s = []
-    for y in sorted(lines.keys())[start:end]:
-
-        l = ''
-        for x in range(WIDTH):
-            if x in lines[y]:
-                l += '#'
-            else:
-                l += '.'
-        s.append(l)
-
-    return '\n'.join(reversed(s))
-
-
-def part1(line):
-    board = set()
-    origin = Point(2, 3)
-    pieces = cycle([p1, p2, p3, p4, p5])
-    highest = 0
-    rocks = 0
-
-    piece = next(pieces)
-    active = piece(origin)
-    for c in cycle(line):
-        if c == '<':
-            active, _ = left(board, active)
-        else:
-            active, _ = right(board, active)
-
-        active, moved = down(board, active)
-        if not moved:
-            top = max(p.y for p in active)
-            if top > highest:
-                highest = top
-
-            board |= active
-            origin = Point(2, highest + 4)
-            piece = next(pieces)
-            active = piece(origin)
-            rocks += 1
-
-        if rocks >= 2022:
-            return highest + 1
 
 
 # 1566984124796 high
 # 1566272189352
 # 1566272188766 low
-def part2(line):
-    board = set()
-    origin = Point(2, 3)
-    pieces = cycle([p1, p2, p3, p4, p5])
-    highest = 0
-    rocks = 0
 
-    lines = defaultdict(set)
-    heights = {}
+# cleaned up solution based on:
+# https://old.reddit.com/r/adventofcode/comments/znykq2/2022_day_17_solutions/j0kdnnj/
+def solve(line):
+    # model rocks with complex numbers
+    rocks, i = (
+        (0, 1, 2, 3),
+        (1, 0+1j, 2+1j, 1+2j),
+        (0, 1, 2, 2+1j, 2+2j),
+        (0, 0+1j, 0+2j, 0+3j),
+        (0, 1, 0+1j, 1+1j),
+    ), 0
+    # convert jet directions to -1 and 1
+    jets,  j = [ord(x) - 61 for x in line], 0
 
-    piece = next(pieces)
-    active = piece(origin)
+    tower = set()
+    cache = dict()
+    top = 0
 
-    for c in cycle(line):
-        if c == '<':
-            active, _ = left(board, active)
+    # check if point is unoccupied
+    empty = lambda pos: pos.real in range(7) and pos.imag > 0 and pos not in tower
+    # check if a rock move is valid
+    check = lambda pos, dir, rock: all(empty(pos + dir + r) for r in rock)
+
+    for step in range(int(1e12)):
+        # set start pos of new rock
+        pos = complex(2, top + 4)
+
+        # print part 1
+        if step == 2022:
+            print(int(top))
+
+        # use current rock and jet index as cache key
+        key = i, j
+        if key in cache:
+            # pull step and top from cache
+            S, T = cache[key]
+            d, m = divmod(1e12 - step, step - S)
+            if m == 0:
+                # print part 1
+                print(int(top + (top - T) * d))
+                break
         else:
-            active, _ = right(board, active)
+            cache[key] = step, top
 
-        active, moved = down(board, active)
-        if not moved:
-            top = max(p.y for p in active)
-            if top > highest:
-                highest = top
-                heights[highest] = rocks
+        # determine next rock, cycle index
+        rock = rocks[i]
+        i = (i + 1) % len(rocks)
 
-            for p in active:
-                lines[p.y].add(p.x)
+        # move the current rock until it settles
+        while True:
+            # determine next jet, cycle index
+            jet = jets[j]
+            j = (j + 1) % len(jets)
 
-            board |= active
-            origin = Point(2, highest + 4)
-            piece = next(pieces)
-            active = piece(origin)
-            rocks += 1
+            # check and move left / right
+            if check(pos, jet, rock):
+                pos += jet
 
-            # simulate the first few rocks
-            if rocks >= 5000:
+            # check and move down
+            if check(pos, -1j, rock):
+                pos += -1j
+            # else this piece is done moving
+            else:
                 break
 
-    chunk = 25
-    start_height = None
-    end_height = None
-    for i in range(1000):
-        pattern = display(lines, i, chunk)
-        for j in range(i + 1, highest):
-            check = display(lines, j, chunk)
-            if check == pattern:
-                print('pattern:', i)
-                print(pattern)
-                print('found at height:', j)
-                start_height = i
-                end_height = j
-                break
+        # add rock to the tower
+        tower |= {pos + r for r in rock}
 
-        if start_height:
-            break
-
-    cycle_height = end_height - start_height
-    start_rocks = heights[min(k for k in heights if k >= start_height)]
-    rps = heights[min(k for k in heights if k >= end_height)] - heights[min(k for k in heights if k >= start_height)]
-    cs = (1000000000000 - start_rocks) // rps
-    return start_height + (cs * cycle_height) 
+        # compute new top value (based on rock height)
+        top = max(top, pos.imag + [1, 0, 2, 2, 3][i])
 
 
 if __name__ == '__main__':
@@ -236,5 +82,4 @@ if __name__ == '__main__':
     for line in fileinput.input():
         line = line.strip()
 
-    print(part1(line))
-    print(part2(line))
+    solve(line)
