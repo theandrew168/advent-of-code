@@ -3,6 +3,9 @@ test*.txt
 input*.txt
 main2.py
 
+# Random files
+.DS_Store
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
