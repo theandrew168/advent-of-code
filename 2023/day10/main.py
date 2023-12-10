@@ -4,6 +4,8 @@ import fileinput
 import sys
 sys.setrecursionlimit(100000)
 
+import numpy as np
+
 LINKS = {
     '|': 'NS',
     '-': 'EW',
@@ -74,57 +76,26 @@ def trace(lines, start, curr, prev, path):
     assert False
 
 
-def inters(lines, path, pt):
-    inside = False
+def shoelace(path):
+    xs = np.array([pt[0] for pt in path])
+    ys = np.array([pt[1] for pt in path])
+    i = np.arange(len(xs))
 
-    width = len(lines[0])
-    for i in range(width):
-        chk = (i, pt[1])
-        if chk == pt:
-            return inside
-
-        p = get(lines, chk)
-        link = LINKS[p]
-
-        if p == '|':
-            inside = not inside
-            continue
-
-        if inside and ('E' in link or 'W' in link):
-            continue
-
-        if inside and ('N' in link or 'S' in link):
-            inside = not inside
-            continue
+    area = np.abs(np.sum(xs[i-1]*ys[i]-xs[i]*ys[i-1])*0.5)
+    area = area - len(path)/2 + 1
+    return int(area)
 
 
 def part1(lines):
     start = find_start(lines)
-    path = trace(lines, start, start, None, [])
-    return len(path) // 2 + 1
+    path = trace(lines, start, start, None, [start])
+    return len(path) // 2
 
 
 def part2(lines):
     start = find_start(lines)
-    path = trace(lines, start, start, None, [])
-    path = set(path)
-
-    total = 0
-
-    width = len(lines[0])
-    height = len(lines)
-    for y in range(height):
-        for x in range(width):
-            pt = (x, y)
-            c = get(lines, pt)
-            if c != '.':
-                continue
-
-            if inters(lines, path, pt):
-                print(pt)
-                total += 1
-
-    return total
+    path = trace(lines, start, start, None, [start])
+    return shoelace(path)
 
 
 if __name__ == '__main__':
