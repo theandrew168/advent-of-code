@@ -38,8 +38,6 @@ def shortest_path(grid, start, end):
     pq.put((0, start))
     while not pq.empty():
         cost, current = pq.get()
-        if current == end:
-            break
 
         for x, y, _ in grid.adj(*current):
             adj = (x, y)
@@ -60,79 +58,54 @@ def shortest_path(grid, start, end):
     return path
 
 
+OPP = {
+    'N': 'S',
+    'S': 'N',
+    'E': 'W',
+    'W': 'E',
+}
+
+
 def part1(lines):
     grid = Grid(lines)
-    path = shortest_path(grid, (0,0), (grid.width-1, grid.height-1))
-    return sum(grid.get(*pt) for pt in path)
 
     start = (0, 0)
-    costs = {(x, y, d): (None, '') for y in range(grid.height)
-                                   for x in range(grid.width)
-                                   for d in 'NSEW'}
-    costs[(0, 0, 'E')] = (0, '')
-    costs[(0, 0, 'S')] = (0, '')
+    end = (grid.width-1, grid.height-1)
+
+    # nodes are: x, y, d, n
+
+    costs = {}
+    costs[(0, 0, None, None)] = 0
 
     pq = PriorityQueue()
-    pq.put((0, (0, 0, 'E')))
-    pq.put((0, (0, 0, 'S')))
+    pq.put((0, (0, 0, None, None)))
 
     # iterate until all nodes have been visited
     while not pq.empty():
-        (dist, curr) = pq.get()
-        node = costs[curr]
-
-        # skip worse options
-        if dist > costs[curr][0]:
-            continue
+        cost, curr = pq.get()
 
         for x, y, d in grid.adj(curr[0], curr[1]):
-            adj = (x, y, d)
-
-            # cant go more than 3 steps in one direction
-            if len(node[1]) >= 3 and node[1][-3:].count(d) >= 3:
-                print('cant go this way')
-                print(curr, adj, node[1], d)
+            if curr[2] == OPP[d]:
                 continue
 
-            # cant reverse direction
-            if node[1]:
-                if node[1][-1] == 'N' and d == 'S':
-                    continue
-                elif node[1][-1] == 'S' and d == 'N':
-                    continue
-                elif node[1][-1] == 'E' and d == 'W':
-                    continue
-                elif node[1][-1] == 'W' and d == 'E':
-                    continue
+            n = curr[3] + 1 if d == curr[2] else 1
+            if n >= 4:
+                continue
 
-            cost = node[0] + grid.get(adj[0], adj[1])
-            if costs[adj][0] is None or cost < costs[adj][0]:
-                print('better way found')
-                print(cost, node[1]+d)
-                pq.put((cost, adj))
-                costs[adj] = (cost, node[1]+d)
+            adj = (x, y, d, n)
+            new_cost = cost + grid.get(x, y)
+            if adj not in costs or new_cost < costs[adj]:
+                costs[adj] = new_cost
+                pq.put((new_cost, adj))
 
-    for k, v in costs.items():
-        if k[0] == grid.width-1 and k[1] == grid.height-1:
-            print(k, v)
+    # lookup the best (lowest) cost
+    best = None
+    for k, cost in costs.items():
+        if k[0] == end[0] and k[1] == end[1]:
+            if best is None or cost < best:
+                best = cost
 
-    return 42
-#    # reverse traverse the path
-#    path = []
-#    node = (grid.width-1, grid.height-1)
-#    while node != start:
-#        path.append(node)
-#
-#        # follow the lowest adjacent cost
-#        nodes = [((x, y), simple[(x, y)]) for x, y, _ in grid.adj(*node)]
-#        node = sorted(nodes, key=lambda n: n[1])[0]
-#        node = node[0]
-#
-#    path = list(reversed(path))
-#    for p in path:
-#        print(p)
-#
-#    return sum(grid.get(*pt) for pt in path)
+    return best
 
 
 def part2(lines):
