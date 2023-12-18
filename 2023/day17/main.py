@@ -27,8 +27,43 @@ class Grid:
             yield x, yy, d
 
 
+def shortest_path(grid, start, end):
+    costs = {}
+    costs[start] = 0
+
+    came_from = {}
+    came_from[start] = None
+
+    pq = PriorityQueue()
+    pq.put((0, start))
+    while not pq.empty():
+        cost, current = pq.get()
+        if current == end:
+            break
+
+        for x, y, _ in grid.adj(*current):
+            adj = (x, y)
+            new_cost = cost + grid.get(*current)
+            if adj not in costs or new_cost < costs[adj]:
+                costs[adj] = new_cost
+                pq.put((new_cost, adj))
+                came_from[adj] = current
+
+    path = []
+    current = end
+    while current != start:
+        path.append(current)
+        current = came_from[current]
+
+    path.append(start)
+    path.reverse()
+    return path
+
+
 def part1(lines):
     grid = Grid(lines)
+    path = shortest_path(grid, (0,0), (grid.width-1, grid.height-1))
+    return sum(grid.get(*pt) for pt in path)
 
     start = (0, 0)
     costs = {(x, y, d): (None, '') for y in range(grid.height)
@@ -77,38 +112,27 @@ def part1(lines):
                 pq.put((cost, adj))
                 costs[adj] = (cost, node[1]+d)
 
-    # (0, 0, 'N') (11, 'ESWN')
-    # (0, 0, 'S') (0, '')
-    # (0, 0, 'E') (0, '')
-    # (0, 0, 'W') (11, 'SENW')
-    # (1, 0, 'N') (9, 'SEN')
-    # (1, 0, 'S') (None, '')
-
-    simple = {}
     for k, v in costs.items():
-        if v[0] is None:
-            continue
-        print(k, v)
-        pt = (k[0], k[1])
-        if pt not in simple or v[0] < simple[pt][0]:
-            simple[pt] = v
+        if k[0] == grid.width-1 and k[1] == grid.height-1:
+            print(k, v)
 
-    # reverse traverse the path
-    path = []
-    node = (grid.width-1, grid.height-1)
-    while node != start:
-        path.append(node)
-
-        # follow the lowest adjacent cost
-        nodes = [((x, y), simple[(x, y)]) for x, y, _ in grid.adj(*node)]
-        node = sorted(nodes, key=lambda n: n[1])[0]
-        node = node[0]
-
-    path = list(reversed(path))
-    for p in path:
-        print(p)
-
-    return sum(grid.get(*pt) for pt in path)
+    return 42
+#    # reverse traverse the path
+#    path = []
+#    node = (grid.width-1, grid.height-1)
+#    while node != start:
+#        path.append(node)
+#
+#        # follow the lowest adjacent cost
+#        nodes = [((x, y), simple[(x, y)]) for x, y, _ in grid.adj(*node)]
+#        node = sorted(nodes, key=lambda n: n[1])[0]
+#        node = node[0]
+#
+#    path = list(reversed(path))
+#    for p in path:
+#        print(p)
+#
+#    return sum(grid.get(*pt) for pt in path)
 
 
 def part2(lines):
