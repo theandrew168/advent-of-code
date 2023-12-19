@@ -1,2 +1,3 @@
+frozendict
 more-itertools
 numpy
