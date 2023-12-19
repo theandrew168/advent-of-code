@@ -67,28 +67,19 @@ def solve1(workflows, rating):
                 break
 
 
-# px{a<2006:qkq,m>2090:A,rfg}
-# pv{a>1716:R,A}
-# lnx{m>1548:A,A}
-# rfg{s<537:gd,x>2440:R,A}
-# qs{s>3448:A,lnx}
-# qkq{x<1416:A,crn}
-# crn{x>2662:A,R}
-# in{s<1351:px,qqz}
-# qqz{s>2770:qs,m<1801:hdj,R}
-# gd{a>3333:R,R}
-# hdj{m>838:A,pv}
-
 def solve2(workflows, name, x, m, a, s):
     R = {'x': x, 'm': m, 'a': a, 's': s}
-    print(name, ' '*(4-len(name)), R)
     total = 0
 
     workflow = workflows[name]
     for step in workflow:
+        print('checking', step, '...')
+        print(name, ' '*(4-len(name)), R)
         if step == 'R':
             return 0
         if step == 'A':
+            print(step)
+            print(name, ' '*(4-len(name)), R)
             return total + math.prod(v[1]-v[0]+1 for v in R.values())
         if ':' not in step:
             return total + solve2(workflows, step, x, m, a, s)
@@ -97,35 +88,41 @@ def solve2(workflows, name, x, m, a, s):
         var, ine, num = cond[0], cond[1], cond[2:]
         num = int(num)
 
-        if ine == '<' and R[var][0] < num:
-            if goto == 'A':
-                R[var] = (R[var][0], num-1)
-                total += math.prod(v[1]-v[0]+1 for v in R.values())
-                continue
-            if goto == 'R':
-                return 0
-
+        if ine == '<':
             l, r = (R[var][0], num-1), (num, R[var][1])
-            R[var] = l
-            total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
-            R[var] = r
-            total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
-            continue
+            if R[var][0] < num:
+                R[var] = l
+                if goto == 'A':
+                    print(step)
+                    print(name, ' '*(4-len(name)), R)
+                    total += math.prod(v[1]-v[0]+1 for v in R.values())
+                    R[var] = r
+                    continue
+                if goto == 'R':
+                    return 0
 
-        if ine == '>' and R[var][1] > num:
-            if goto == 'A':
-                R[var] = (num+1, R[var][1])
-                total += math.prod(v[1]-v[0]+1 for v in R.values())
+                total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
+            else:
+                R[var] = r
                 continue
-            if goto == 'R':
-                return 0
 
+        if ine == '>':
             l, r = (R[var][0], num), (num+1, R[var][1])
-            R[var] = l
-            total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
-            R[var] = r
-            total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
-            continue
+            if R[var][1] > num:
+                R[var] = r
+                if goto == 'A':
+                    print(step)
+                    print(name, ' '*(4-len(name)), R)
+                    total += math.prod(v[1]-v[0]+1 for v in R.values())
+                    R[var] = l
+                    continue
+                if goto == 'R':
+                    return 0
+
+                total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
+            else:
+                R[var] = l
+                continue
 
     return total
 
