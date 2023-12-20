@@ -1,15 +1,6 @@
 import fileinput
 import math
 
-#  90560000000000
-# 151683687444000
-# 373443687444000
-# 151527200000000
-#  35896635000000
-# 151527200000000
-
-# 167409079868000
-
 
 def parse(lines):
     i = lines.index('')
@@ -69,20 +60,17 @@ def solve1(workflows, rating):
 
 def solve2(workflows, name, x, m, a, s):
     R = {'x': x, 'm': m, 'a': a, 's': s}
-    total = 0
 
+    total = 0
     workflow = workflows[name]
     for step in workflow:
-        print('checking', step, '...')
-        print(name, ' '*(4-len(name)), R)
         if step == 'R':
-            return 0
+            return total
         if step == 'A':
-            print(step)
-            print(name, ' '*(4-len(name)), R)
+#            print(R)
             return total + math.prod(v[1]-v[0]+1 for v in R.values())
         if ':' not in step:
-            return total + solve2(workflows, step, x, m, a, s)
+            return total + solve2(workflows, step, R['x'], R['m'], R['a'], R['s'])
 
         cond, goto = step.split(':')
         var, ine, num = cond[0], cond[1], cond[2:]
@@ -93,15 +81,16 @@ def solve2(workflows, name, x, m, a, s):
             if R[var][0] < num:
                 R[var] = l
                 if goto == 'A':
-                    print(step)
-                    print(name, ' '*(4-len(name)), R)
+#                    print(R)
                     total += math.prod(v[1]-v[0]+1 for v in R.values())
                     R[var] = r
                     continue
                 if goto == 'R':
-                    return 0
+                    R[var] = r
+                    continue
 
                 total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
+                R[var] = r
             else:
                 R[var] = r
                 continue
@@ -111,15 +100,16 @@ def solve2(workflows, name, x, m, a, s):
             if R[var][1] > num:
                 R[var] = r
                 if goto == 'A':
-                    print(step)
-                    print(name, ' '*(4-len(name)), R)
+#                    print(R)
                     total += math.prod(v[1]-v[0]+1 for v in R.values())
                     R[var] = l
                     continue
                 if goto == 'R':
-                    return 0
+                    R[var] = l
+                    continue
 
                 total += solve2(workflows, goto, R['x'], R['m'], R['a'], R['s'])
+                R[var] = l
             else:
                 R[var] = l
                 continue
