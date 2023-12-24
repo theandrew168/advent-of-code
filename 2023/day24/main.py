@@ -2,11 +2,10 @@ from collections import namedtuple
 import fileinput
 import itertools
 
-# < 19447
+import z3
 
 
 Vector = namedtuple('Vector', 'x y z')
-
 
 class Ray:
     def __init__(self, pos, vel):
@@ -20,7 +19,8 @@ class Ray:
     def at(self, t):
         x = self.pos.x + self.vel.x * t
         y = self.pos.y + self.vel.y * t
-        return (x, y)
+        z = self.pos.z + self.vel.z * t
+        return Vector(x, y, z)
 
     def intersection(self, other):
         az = self.pos
@@ -50,7 +50,7 @@ def parse(lines):
         yield Vector(*pos), Vector(*vel)
 
 
-def solve2D(rays, start, end):
+def solve1(rays, start, end):
     total = 0
     for a, b in itertools.combinations(rays, 2):
         inter = a.intersection(b)
@@ -68,13 +68,20 @@ def solve2D(rays, start, end):
     return total
 
 
+def solve2(rays, start=-10, end=10, tm=20):
+    x = z3.Int('x')
+    y = z3.Int('y')
+    return z3.solve(x > 2, y < 10, x + 2*y == 7)
+
+
 def part1(lines):
     rays = [Ray(pos, rel) for pos, rel in parse(lines)]
-    return solve2D(rays, 200_000_000_000_000, 400_000_000_000_000)
+    return solve1(rays, 200_000_000_000_000, 400_000_000_000_000)
 
 
 def part2(lines):
-    pass
+    rays = [Ray(pos, rel) for pos, rel in parse(lines)]
+    return solve2(rays)
 
 
 if __name__ == '__main__':
