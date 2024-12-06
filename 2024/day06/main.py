@@ -69,48 +69,66 @@ def part2(lines):
 
     width = len(lines[0])
     height = len(lines)
+
+    # optimization: first collect all points on the default path
+    pos = init_pos
+    face = 'up'
+    base_path = set()
+    base_path.add(pos)
+    while True:
+        [nx, ny] = peek(pos, face)
+        # out of bounds, break
+        if nx < 0 or nx >= width or ny < 0 or ny >= height:
+            break
+
+        item = lines[ny][nx]
+        if item == '#':
+            face = turn(face)
+        else:
+            pos = (nx, ny)
+            base_path.add(pos)
+
     total = 0
 
-    # check for a loop by changing each cell
-    for y in range(height):
-        for x in range(width):
-            check = copy.deepcopy(lines)
+    # check for a loop by changing each on the default path
+    for [x, y] in base_path:
+        check = copy.deepcopy(lines)
 
-            # skip starting pos
-            if (x, y) == init_pos:
-                continue
-            # skip existing blockers
-            if check[y][x] == '#':
-                continue
+        # skip starting pos
+        if (x, y) == init_pos:
+            continue
+        # skip existing blockers
+        if check[y][x] == '#':
+            continue
 
-            # rebuild the modified grid
-            check[y] = check[y][:x] + '#' + check[y][x+1:]
+        # rebuild the modified grid
+        check[y] = check[y][:x] + '#' + check[y][x+1:]
 
-            pos = init_pos
-            face = 'up'
+        pos = init_pos
+        face = 'up'
 
-            # track (pos, face) for loop detection
-            path = set()
-            path.add((pos, face))
+        # track (pos, face) for loop detection
+        path = set()
+        path.add((pos, face))
 
-            # follow the path and check for a loop
-            while True:
-                [nx, ny] = peek(pos, face)
-                # out of bounds, break
-                if nx < 0 or nx >= width or ny < 0 or ny >= height:
+        # follow the path and check for a loop
+        while True:
+            [nx, ny] = peek(pos, face)
+            # out of bounds, break
+            if nx < 0 or nx >= width or ny < 0 or ny >= height:
+                break
+
+            item = check[ny][nx]
+            if item == '#':
+                face = turn(face)
+            else:
+                pos = (nx, ny)
+                key = (pos, face)
+                if key in path:
+                    total += 1
                     break
-
-                item = check[ny][nx]
-                if item == '#':
-                    face = turn(face)
                 else:
-                    pos = (nx, ny)
-                    key = (pos, face)
-                    if key in path:
-                        total += 1
-                        break
-                    else:
-                        path.add(key)
+                    path.add(key)
 
     return total
 
