@@ -25,7 +25,7 @@ def evaluate(equation):
     return total
 
 
-def dfs(goal, equation, p2=False):
+def solve(goal, equation, p2=False):
     # base case: all ops are decided
     total = evaluate(equation)
     if '?' not in equation:
@@ -40,9 +40,9 @@ def dfs(goal, equation, p2=False):
     mul = equation[:idx] + ['*'] + equation[idx+1:]
     cat = equation[:idx] + ['||'] + equation[idx+1:]
     if p2:
-        return dfs(goal, add, p2) or dfs(goal, mul, p2) or dfs(goal, cat, p2)
+        return solve(goal, add, p2) or solve(goal, mul, p2) or solve(goal, cat, p2)
     else:
-        return dfs(goal, add) or dfs(goal, mul)
+        return solve(goal, add) or solve(goal, mul)
 
 
 def part1(lines):
@@ -57,7 +57,7 @@ def part1(lines):
             equation.append('?')
         equation = equation[:-1]
 
-        if dfs(goal, equation):
+        if solve(goal, equation):
             total += goal
     return total
 
@@ -74,7 +74,7 @@ def part2(lines):
             equation.append('?')
         equation = equation[:-1]
 
-        if dfs(goal, equation, True):
+        if solve(goal, equation, True):
             total += goal
     return total
 
