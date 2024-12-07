@@ -1,5 +1,4 @@
 import fileinput
-import operator
 
 
 def parse(line):
