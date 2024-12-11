@@ -1,4 +1,3 @@
-from collections import defaultdict, deque
 import fileinput
 import functools
 
@@ -45,7 +44,7 @@ Map initial values to generations as an array?
   24: [[24]],
 }
 
-Or a directed cyclic graph:
+Or a directed cyclic graph?:
 
 0 -> 1
 1 -> 2024
@@ -57,6 +56,7 @@ Or a directed cyclic graph:
 24 -> 4
 
 With a graph, solving becomes a recursive counting problem.
+Turns out we don't even need the graph. Just memo the counter.
 
 Sim from 0:
 
@@ -72,24 +72,12 @@ Sim from 0:
 def part2(lines):
     stones = [int(s) for s in lines[0].split()]
 
-    G = defaultdict(list)
-
-    # build the graph
-    Q = deque(stones)
-    while Q:
-        stone = Q.popleft()
-        if stone in G:
-            continue
-        res = sim(stone)
-        G[stone] = res
-        Q.extend(res)
-
     # count the stones (memoized)
     @functools.cache
     def count(stone, depth):
         if depth >= 75:
             return 0
-        edges = G[stone]
+        edges = sim(stone)
         return len(edges) - 1 + sum(count(s, depth+1) for s in edges)
 
     return len(stones) + sum(count(stone, 0) for stone in stones)
