@@ -1,7 +1,80 @@
 from collections import deque
 import fileinput
+from queue import PriorityQueue
 
 import networkx as nx
+
+
+def adj4(lines, pt):
+    width = len(lines[0])
+    height = len(lines)
+    for y in [-1, 1]:
+        yield (pt[0], pt[1] + y)
+    for x in [-1, 1]:
+        yield (pt[0] + x, pt[1])
+
+
+def shortest_path(lines, start, end):
+    d = 'east'
+    costs = {}
+    costs[(start, d)] = 0
+
+    pq = PriorityQueue()
+    pq.put((0, start, d))
+
+    while not pq.empty():
+        cost, curr, cd = pq.get()
+        for adj in adj4(lines, curr):
+            ax, ay = adj
+            c = lines[ay][ax]
+            if c == '#':
+                continue
+            # calc delta on each axis
+            dx, dy = ax - curr[0], ay - curr[1]
+            # 180, impossible or 2001?
+            if cd == 'east' and dx == -1:
+                continue
+            if cd == 'west' and dx == 1:
+                continue
+            if cd == 'south' and dy == -1:
+                continue
+            if cd == 'north' and dy == 1:
+                continue
+            new_cost = None
+            new_d = None
+            # same dir, cost is 1
+            if cd == 'east' and dx == 1:
+                new_cost = cost + 1
+                new_d = cd
+            elif cd == 'west' and dx == -1:
+                new_cost = cost + 1
+                new_d = cd
+            elif cd == 'south' and dy == 1:
+                new_cost = cost + 1
+                new_d = cd
+            elif cd == 'north' and dy == -1:
+                new_cost = cost + 1
+                new_d = cd
+            # 90 deg turn, cost is 1001
+            elif dx == 1:
+                new_cost = cost + 1001
+                new_d = 'east'
+            elif dx == -1:
+                new_cost = cost + 1001
+                new_d = 'west'
+            elif dy == 1:
+                new_cost = cost + 1001
+                new_d = 'south'
+            elif dy == -1:
+                new_cost = cost + 1001
+                new_d = 'north'
+
+            key = (adj, new_d)
+            if key not in costs or new_cost <= costs[key]:
+                costs[key] = new_cost
+                pq.put((new_cost, adj, new_d))
+
+    return costs
 
 
 def build_graph(lines, start):
@@ -66,16 +139,11 @@ def build_graph(lines, start):
 def part1(lines):
     width = len(lines[0])
     height = len(lines)
+    start = (1, height-2)
+    end = (width-2, 1)
 
-    start = (1, height-2, 'east')
-    ends = [
-        (width-2, 1, 'north'),
-        (width-2, 1, 'east'),
-    ]
-
-    G = build_graph(lines, start)
-    best = min(nx.shortest_path_length(G, start, end, weight='weight') for end in ends if end in G)
-    return best
+    costs = shortest_path(lines, start, end)
+    return min(v for k,v in costs.items() if k[0] == end)
 
 
 def part2(lines):
