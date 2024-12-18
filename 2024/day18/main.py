@@ -77,6 +77,7 @@ def part2(lines):
             return ','.join(str(m) for m in mem)
 
 
+# Not a bad day!
 if __name__ == '__main__':
     lines = []
     for line in fileinput.input():
