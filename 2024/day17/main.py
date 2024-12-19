@@ -139,25 +139,39 @@ def part1(lines):
     return ','.join(str(n) for n in out)
 
 
+# Solve from right to left.
+# Once a matching character is found, left shift A by and recur.
+# Base case: we found the desired program.
+# If the program len exceeds N and doesn't match, abort.
+def solve(prog, a, n):
+    i = 0
+    while True:
+        A = a+i
+
+        # if we found the desired program, return
+        out = run([A, 0, 0], prog)
+        if out == prog:
+            return A
+
+        # if we found a partially valid path, recur
+        want = prog[-n:]
+        if out == want:
+            s = solve(prog, A << 3, n + 1)
+            if s:
+                return s
+
+        # abort this branch if it can't be valid
+        if len(out) > len(want):
+            return 0
+
+        i += 1
+
+    return 0
+
+
 def part2(lines):
     regs, prog = parse(lines)
-
-    # iteratively build up the program from end to start
-    A = 0
-    for i in range(len(prog)):
-        # we want to create the following output (building from the end)
-        want = prog[-(i+1):]
-        while True:
-            # run the output for the current A
-            out = run([A, regs[1], regs[2]], prog)
-            # if it gives us the correct result, shift left by 3 and keep rolling
-            if out == want:
-                A <<= 3
-                break
-            # if it doesn't give us the output we want, keep looping
-            A += 1
-    # final answer was shifted an extra time to undo it before returning
-    return A >> 3
+    return solve(prog, 0, 1)
 
 
 if __name__ == '__main__':
