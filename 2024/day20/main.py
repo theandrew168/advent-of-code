@@ -1,4 +1,4 @@
-from collections import deque
+from collections import defaultdict, deque
 import fileinput
 
 
@@ -29,11 +29,9 @@ def adj4(pt):
 def bfs(lines, start, end):
     seen = set()
 
-    q = deque([[start]])
+    q = deque([(0, start)])
     while q:
-        path = q.popleft()
-
-        curr = path[-1]
+        cost, curr = q.popleft()
         if curr in seen:
             continue
 
@@ -44,36 +42,44 @@ def bfs(lines, start, end):
             if c == '#':
                 continue
 
-            new_path = path + [adj]
+            new_cost = cost + 1
             if adj == end:
-                return new_path
+                return new_cost
 
-            q.append(new_path)
+            q.append((new_cost, adj))
+
+
+def apply_skip(lines, x, y):
+    out = []
+    for i, line in enumerate(lines):
+        if i == y:
+            skip = list(line)
+            skip[x] = '.'
+            skip = ''.join(skip)
+            out.append(skip)
+        else:
+            out.append(line)
+    return out
 
 
 def part1(lines):
     width = len(lines[0])
     height = len(lines)
     start, end = find_start_end(lines)
+    baseline = bfs(lines, start, end)
 
-    path = bfs(lines, start, end)
-    return len(path) - 1
-
-    total = 0
-    for y in range(height):
-        for x in range(width):
-            if x == 0 or x == width-1:
-                continue
-            if y == 0 or y == height-1:
-                continue
+    diffs = defaultdict(int)
+    for y in range(1, height-1):
+        for x in range(1, width-1):
             c = lines[y][x]
-            if c == '#':
-                total += 1
+            if c == '.':
+                continue
+            skip = apply_skip(lines, x, y)
+            cost = bfs(skip, start, end)
+            diff = baseline - cost
+            diffs[diff] += 1
 
-    path = bfs(lines, start, end)
-    print(path)
-    print(len(path))
-    return total
+    return sum(v for k, v in diffs.items() if k >= 100)
 
 
 def part2(lines):
