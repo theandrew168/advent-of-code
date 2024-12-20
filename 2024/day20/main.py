@@ -30,7 +30,7 @@ def adj4(pt):
 def bfs(lines, start, end):
     seen = set()
 
-    q = deque([[start]])
+    q = deque([(0, start)])
     while q:
         cost, curr = q.popleft()
         if curr in seen:
@@ -88,26 +88,6 @@ def follow(lines, start, end):
     return path
 
 
-def part1(lines):
-    width = len(lines[0])
-    height = len(lines)
-    start, end = find_start_end(lines)
-    baseline = bfs(lines, start, end)
-
-    diffs = defaultdict(int)
-    for y in range(1, height-1):
-        for x in range(1, width-1):
-            c = lines[y][x]
-            if c == '.':
-                continue
-            skip = apply_skip(lines, x, y)
-            cost = bfs(skip, start, end)
-            diff = baseline - cost
-            diffs[diff] += 1
-
-    return sum(v for k, v in diffs.items() if k >= 100)
-
-
 @functools.cache
 def dist(a, b):
     return abs(b[0]-a[0]) + abs(b[1]-a[1])
@@ -127,12 +107,7 @@ def diamond(center, size):
                 yield pt
 
 
-def part2(lines):
-    skip = 20
-    width = len(lines[0])
-    height = len(lines)
-    start, end = find_start_end(lines)
-    path = follow(lines, start, end)
+def solve(path, skip):
     pathset = set(path)
 
     diffs = defaultdict(int)
@@ -161,6 +136,26 @@ def part2(lines):
             # found a valid skip! count it!
             diffs[diff] += 1
 
+    return diffs
+
+
+def part1(lines):
+    width = len(lines[0])
+    height = len(lines)
+    start, end = find_start_end(lines)
+    path = follow(lines, start, end)
+
+    diffs = solve(path, 2)
+    return sum(v for k, v in diffs.items() if k >= 100)
+
+
+def part2(lines):
+    width = len(lines[0])
+    height = len(lines)
+    start, end = find_start_end(lines)
+    path = follow(lines, start, end)
+
+    diffs = solve(path, 20)
     return sum(v for k, v in diffs.items() if k >= 100)
 
 
@@ -169,5 +164,5 @@ if __name__ == '__main__':
     for line in fileinput.input():
         lines.append(line.strip())
 
-    #print(part1(lines))
+    print(part1(lines))
     print(part2(lines))
