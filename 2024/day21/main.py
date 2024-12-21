@@ -1,4 +1,5 @@
 import fileinput
+import functools
 
 
 # 789
@@ -72,6 +73,12 @@ def path_nums(a, b, d):
     if a in ['7', '4', '1'] and b in ['0', 'A']:
         return path_dx(dx) + path_dy(dy)
 
+    # special cases: left / right proximity
+    if d == '<' and dx > 0 and dy > 0:
+        return path_dy(dy) + path_dx(dx)
+    if d == '>' and dx < 0 and dy > 0:
+        return path_dy(dy) + path_dx(dx)
+
     # need to move across both axes, if possible,
     # prefer to continue in the current direction first
     if d in ['^', 'v']:
@@ -110,6 +117,7 @@ def path_dirs(a, b):
     return path_dx(dx) + path_dy(dy)
 
 
+@functools.cache
 def solve_nums(code):
     curr = 'A'
     d = None
@@ -124,6 +132,7 @@ def solve_nums(code):
     return path
 
 
+@functools.cache
 def solve_dirs(code):
     curr = 'A'
     path = ''
@@ -144,18 +153,24 @@ def part1(lines):
     #print(path_dirs('v', 'A'))
     total = 0
     for code in lines:
+        print(code)
         path = solve_nums(code)
-        print(path)
-        path = solve_dirs(path)
-        print(path)
-        path = solve_dirs(path)
+        for _ in range(2):
+            path = solve_dirs(path)
         print(len(path), path)
         total += len(path) * int(code[:-1])
     return total
 
 
 def part2(lines):
-    pass
+    total = 0
+    for code in lines:
+        path = solve_nums(code)
+        for i in range(25):
+            path = solve_dirs(path)
+            print(i, len(path))
+        total += len(path) * int(code[:-1])
+    return total
 
 
 if __name__ == '__main__':
