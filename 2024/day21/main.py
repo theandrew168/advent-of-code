@@ -174,16 +174,13 @@ def part2(lines):
 
     # build up the tower of costs one robot at a time
     costs = [base]
-    for i in range(5):
+    for i in range(25):
         d = defaultdict(dict)
         for X in cs:
             for Y in cs:
                 best = None
                 for p in PATHS[X][Y]:
-                    # always at least 1 for the final A press
                     cost = 0
-                    #if p == 'A':
-                    #    cost = 1
                     pp = 'A' + p
                     for ip in range(len(pp)-1):
                         x, y = pp[ip], pp[ip+1]
@@ -191,11 +188,10 @@ def part2(lines):
                     if best is None or cost < best:
                         best = cost
                 d[X][Y] = best
-
         costs.append(d)
 
-    import pprint
-    pprint.pprint(costs)
+#    import pprint
+#    pprint.pprint(costs)
 
 #    code = '029A'
 #    for j in range(5):
@@ -216,7 +212,7 @@ def part2(lines):
         path = solve_nums(code)
         for i in range(len(path)-1):
             x, y = path[i], path[i+1]
-            c = costs[-1][x][y]
+            c = costs[1][x][y]
             cost += c
         print(code, cost, path)
         total += cost * int(code[:-1])
