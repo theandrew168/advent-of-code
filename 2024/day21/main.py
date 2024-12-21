@@ -1,3 +1,4 @@
+from collections import defaultdict
 import fileinput
 import functools
 
@@ -143,33 +144,82 @@ def solve_dirs(code):
 
 
 def part1(lines):
-    #print(path_nums('7', '9', U))
-    #print(path_nums('A', '9', U))
-    #print(path_nums('9', 'A', U))
-    #print(path_nums('A', 'A', U))
-    #print(path_nums('7', '3', R))
-    #print(path_dirs('A', '<'))
-    #print(path_dirs('<', 'A'))
-    #print(path_dirs('v', 'A'))
     total = 0
     for code in lines:
-        print(code)
         path = solve_nums(code)
-        for _ in range(2):
+        for i in range(2):
             path = solve_dirs(path)
-        print(len(path), path)
+        print(code, len(path))
         total += len(path) * int(code[:-1])
     return total
 
 
 def part2(lines):
+    # all shortest paths from X to Y on the dir pad
+    PATHS = {
+        'A': {'A': ['A'], '^': ['<A'], '>': ['vA'], 'v': ['<vA', 'v<A'], '<': ['v<<A']},
+        '^': {'A': ['>A'], '^': ['A'], '>': ['v>A', '>vA'], 'v': ['vA'], '<': ['v<A']},
+        '>': {'A': ['<A'], '^': ['<^A', '^<A'], '>': ['A'], 'v': ['<A'], '<': ['<<A']},
+        'v': {'A': ['>^A', '^>A'], '^': ['^A'], '>': ['>A'], 'v': ['A'], '<': ['<A']},
+        '<': {'A': ['>>^A'], '^': ['>^A'], '>': ['>>A'], 'v': ['>A'], '<': ['A']},
+    }
+
+    cs = ['A', '^', '>', 'v', '<']
+
+    # create the baseline costs of every X to Y on the dir pad
+    base = defaultdict(dict)
+    for X in cs:
+        for Y in cs:
+            base[X][Y] = min(len(p) for p in PATHS[X][Y])
+
+    # build up the tower of costs one robot at a time
+    costs = [base]
+    for i in range(5):
+        d = defaultdict(dict)
+        for X in cs:
+            for Y in cs:
+                best = None
+                for p in PATHS[X][Y]:
+                    # always at least 1 for the final A press
+                    cost = 0
+                    #if p == 'A':
+                    #    cost = 1
+                    pp = 'A' + p
+                    for ip in range(len(pp)-1):
+                        x, y = pp[ip], pp[ip+1]
+                        cost += costs[i][x][y]
+                    if best is None or cost < best:
+                        best = cost
+                d[X][Y] = best
+
+        costs.append(d)
+
+    import pprint
+    pprint.pprint(costs)
+
+#    code = '029A'
+#    for j in range(5):
+#        cost = 0
+#        path = solve_nums(code)
+#        for i in range(len(path)-1):
+#            x, y = path[i], path[i+1]
+#            c = costs[j][x][y]
+#            cost += c
+#        print(j, cost)
+#
+#    return
+        
+
     total = 0
     for code in lines:
+        cost = 0
         path = solve_nums(code)
-        for i in range(25):
-            path = solve_dirs(path)
-            print(i, len(path))
-        total += len(path) * int(code[:-1])
+        for i in range(len(path)-1):
+            x, y = path[i], path[i+1]
+            c = costs[-1][x][y]
+            cost += c
+        print(code, cost, path)
+        total += cost * int(code[:-1])
     return total
 
 
