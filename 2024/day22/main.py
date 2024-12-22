@@ -1,3 +1,4 @@
+from collections import defaultdict
 import fileinput
 import functools
 
@@ -27,12 +28,12 @@ def part2(lines):
     all_costs = []
     for line in lines:
         s = int(line)
-        prev = int(str(s)[-1])
+        prev = s % 10
         costs = {}
         changes = []
         for i in range(N):
             s = calc(s)
-            price = int(str(s)[-1])
+            price = s % 10
             diff = price - prev
             changes.append(diff)
             prev = price
@@ -42,27 +43,27 @@ def part2(lines):
             if seq in costs:
                 continue
             costs[seq] = price
+        assert len(changes) == N
         all_costs.append(costs)
 
-    all_seqs = set(seq for seq in costs for costs in all_costs)
+    all_seqs = set()
+    for costs in all_costs:
+        for seq in costs:
+            all_seqs.add(seq)
     assert all(len(seq) == 4 for seq in all_seqs)
-    print(len(all_seqs), 'seqs')
 
-    best = None
+    scores = defaultdict(int)
     for seq in all_seqs:
-        #print(seq)
         total = 0
         for costs in all_costs:
             if seq not in costs:
                 continue
             total += costs[seq]
-        if best is None or total > best:
-            print('best', total, seq)
-            best = total
-    return best
+        scores[seq] = total
+
+    return max(scores.values())
 
 
-# 1780 too low
 if __name__ == '__main__':
     lines = []
     for line in fileinput.input():
