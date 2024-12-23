@@ -52,7 +52,7 @@ NUM_PATHS = {
         '0': ['A'],
         '1': ['^<A'],
         '2': ['^A'],
-        '3': ['^<A', '>^A'],
+        '3': ['^>A', '>^A'],
         '4': ['^^<A'],
         '5': ['^^A'],
         '6': ['^^>A', '>^^A'],
@@ -183,7 +183,7 @@ NUM_PATHS = {
 DIR_PATHS = {
     'A': {'A': ['A'], '^': ['<A'], '>': ['vA'], 'v': ['<vA', 'v<A'], '<': ['v<<A']},
     '^': {'A': ['>A'], '^': ['A'], '>': ['v>A', '>vA'], 'v': ['vA'], '<': ['v<A']},
-    '>': {'A': ['<A'], '^': ['<^A', '^<A'], '>': ['A'], 'v': ['<A'], '<': ['<<A']},
+    '>': {'A': ['^A'], '^': ['<^A', '^<A'], '>': ['A'], 'v': ['<A'], '<': ['<<A']},
     'v': {'A': ['>^A', '^>A'], '^': ['^A'], '>': ['>A'], 'v': ['A'], '<': ['<A']},
     '<': {'A': ['>>^A'], '^': ['>^A'], '>': ['>>A'], 'v': ['>A'], '<': ['A']},
 }
@@ -377,43 +377,7 @@ def part1(lines):
 
 
 def part2(lines):
-    cs = ['A', '^', '>', 'v', '<']
-
-    # create the baseline costs of every X to Y on the dir pad
-    base = defaultdict(dict)
-    for X in cs:
-        for Y in cs:
-            base[X][Y] = min(len(p) for p in DIR_PATHS[X][Y])
-
-    # build up the tower of costs one robot at a time
-    costs = [base]
-    for i in range(25):
-        d = defaultdict(dict)
-        for X in cs:
-            for Y in cs:
-                best = None
-                for p in DIR_PATHS[X][Y]:
-                    cost = 0
-                    pp = 'A' + p
-                    for ip in range(len(pp)-1):
-                        x, y = pp[ip], pp[ip+1]
-                        cost += costs[i][x][y]
-                    if best is None or cost < best:
-                        best = cost
-                d[X][Y] = best
-        costs.append(d)
-
-    total = 0
-    for code in lines:
-        cost = 0
-        path = solve_nums(code)
-        for i in range(len(path)-1):
-            x, y = path[i], path[i+1]
-            c = costs[1][x][y]
-            cost += c
-        print(code, cost, path)
-        total += cost * int(code[:-1])
-    return total
+    return solve(lines, 25)
 
 
 if __name__ == '__main__':
@@ -422,4 +386,4 @@ if __name__ == '__main__':
         lines.append(line.strip())
 
     print(part1(lines))
-    #print(part2(lines))
+    print(part2(lines))
