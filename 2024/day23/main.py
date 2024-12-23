@@ -34,11 +34,35 @@ def part1(lines):
     return total
 
 
+def bron_kerbosch(G, r, p, x):
+    if not p and not x:
+        yield r
+        return
+    for v in set(p):
+        yield from bron_kerbosch(G, r | set([v]), p & G[v], x & G[v])
+        p.remove(v)
+        x.add(v)
+
+
 def part2(lines):
     G = build_graph(lines)
 
     best = []
     for clique in nx.find_cliques(G):
+        if len(clique) > len(best):
+            best = clique
+    return ','.join(sorted(best))
+
+
+def part2_bron_kerbosch(lines):
+    graph = defaultdict(set)
+    for line in lines:
+        a, b = line.split('-')
+        graph[a].add(b)
+        graph[b].add(a)
+
+    best = []
+    for clique in bron_kerbosch(graph, set(), set(graph.keys()), set()):
         if len(clique) > len(best):
             best = clique
     return ','.join(sorted(best))
@@ -51,3 +75,4 @@ if __name__ == '__main__':
 
     print(part1(lines))
     print(part2(lines))
+    print(part2_bron_kerbosch(lines))
