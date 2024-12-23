@@ -1,6 +1,7 @@
 from collections import defaultdict
 import fileinput
 import functools
+import itertools
 
 
 # 789
@@ -31,7 +32,7 @@ DIRS = {
     '>': (2, 1),
 }
 
-# all shortest paths from X to Y on the num pad
+# All shortest paths from X to Y on the num pad.
 NUM_PATHS = {
     'A': {
         'A': ['A'],
@@ -102,7 +103,7 @@ NUM_PATHS = {
         'A': ['>>vvA'],
         '0': ['>vvA'],
         '1': ['vA'],
-        '2': ['v>A', '>vA',],
+        '2': ['v>A', '>vA'],
         '3': ['>>vA', 'v>>A'],
         '4': ['A'],
         '5': ['>A'],
@@ -178,7 +179,7 @@ NUM_PATHS = {
     },
 }
 
-# all shortest paths from X to Y on the dir pad
+# All shortest paths from X to Y on the dir pad.
 DIR_PATHS = {
     'A': {'A': ['A'], '^': ['<A'], '>': ['vA'], 'v': ['<vA', 'v<A'], '<': ['v<<A']},
     '^': {'A': ['>A'], '^': ['A'], '>': ['v>A', '>vA'], 'v': ['vA'], '<': ['v<A']},
@@ -186,6 +187,79 @@ DIR_PATHS = {
     'v': {'A': ['>^A', '^>A'], '^': ['^A'], '>': ['>A'], 'v': ['A'], '<': ['<A']},
     '<': {'A': ['>>^A'], '^': ['>^A'], '>': ['>>A'], 'v': ['>A'], '<': ['A']},
 }
+
+
+# Recursively construct the sequence of steps needed
+# to enter the given "keys" from one level higher. We
+# can assume that the "level + 1" location always starts
+# on A.
+#
+# Example:
+# '<A' -> ['v<<A>>^A']
+def build_seq(keys, index=0, prev='A', path=''):
+    if index == len(keys):
+        yield path
+        return
+    curr = keys[index]
+    for p in DIR_PATHS[prev][curr]:
+        yield from build_seq(keys, index+1, curr, path + p)
+
+
+# Find the shortest sequence to enter "keys" at a given depth.
+# Memoize this func since seqs are often re-computed.
+@functools.cache
+def shortest_seq(keys, depth):
+    # base case, keys cost 1 per key
+    if depth == 0:
+        return len(keys)
+
+    # prep keys for splitting on (and keeping) A
+    keys2 = keys
+    if keys2[-1] == 'A':
+        keys2 = keys2[:-1]
+
+    # split the keys up to (and including) each A
+    subkeys = [k + 'A' for k in keys2.split('A')]
+
+    total = 0
+    for subkey in subkeys:
+        # recursively find the shortest seq for each subkey
+        total += min(shortest_seq(seq, depth-1) for seq in build_seq(subkey))
+    return total
+
+#shortest_seq('<A', 3)
+
+# A 0 ['<A']
+# 0 2 ['^A']
+# 2 9 ['^^>A', '>^^A']
+# 9 A ['vvvA']
+
+# 4  029A
+# 12 <A^A^^>AvvvA OR <A^A>^^AvvvA
+
+#for x, y in itertools.pairwise('A029A'):
+#    print(x, y, NUM_PATHS[x][y])
+#
+#for i in range(10):
+#    print(i, shortest_seq('<A^A^^>AvvvA', i))
+#for i in range(10):
+#    print(i, shortest_seq('<A^A>^^AvvvA', i))
+#
+#raise SystemExit
+
+def solve(lines, max_depth):
+    score = 0
+
+    # for each input code...
+    for code in lines:
+        # determine all steps necessary in its numpad sequence
+        total = 0
+        for x, y in itertools.pairwise('A' + code):
+            total += min(shortest_seq(seq, max_depth) for seq in NUM_PATHS[x][y])
+        score += total * int(code[:-1])
+
+    return score
+
 
 def path_dx(dx):
     if dx > 0:
@@ -299,18 +373,10 @@ def solve_dirs(code):
 
 
 def part1(lines):
-    total = 0
-    for code in lines:
-        path = solve_nums(code)
-        for i in range(2):
-            path = solve_dirs(path)
-        print(code, len(path))
-        total += len(path) * int(code[:-1])
-    return total
+    return solve(lines, 2)
 
 
 def part2(lines):
-
     cs = ['A', '^', '>', 'v', '<']
 
     # create the baseline costs of every X to Y on the dir pad
@@ -337,22 +403,6 @@ def part2(lines):
                 d[X][Y] = best
         costs.append(d)
 
-#    import pprint
-#    pprint.pprint(costs)
-
-#    code = '029A'
-#    for j in range(5):
-#        cost = 0
-#        path = solve_nums(code)
-#        for i in range(len(path)-1):
-#            x, y = path[i], path[i+1]
-#            c = costs[j][x][y]
-#            cost += c
-#        print(j, cost)
-#
-#    return
-        
-
     total = 0
     for code in lines:
         cost = 0
@@ -372,4 +422,4 @@ if __name__ == '__main__':
         lines.append(line.strip())
 
     print(part1(lines))
-    print(part2(lines))
+    #print(part2(lines))
