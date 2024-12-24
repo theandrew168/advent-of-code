@@ -1,5 +1,6 @@
 from collections import deque
 import fileinput
+import itertools
 
 
 def parse(lines):
@@ -41,7 +42,35 @@ def part1(lines):
     return int(bits, base=2)
 
 
+# 45 Xs
+# 45 Ys
+# 222 gates
+
+# Rough calcs:
+# 222 choose 4 (98491965) * 4 choose 2 (6) = 590951790
 def part2(lines):
+    wires, gates = parse(lines)
+    gates = deque(gates)
+    while gates:
+        gate = gates.popleft()
+        a, op, b, c = gate
+        if a not in wires or b not in wires:
+            gates.append(gate)
+            continue
+        if op == 'AND':
+            wires[c] = wires[a] & wires[b]
+        elif op == 'OR':
+            wires[c] = wires[a] | wires[b]
+        elif op == 'XOR':
+            wires[c] = wires[a] ^ wires[b]
+        else:
+            assert False
+
+    zs = [wire for wire in wires if wire[0] == 'z']
+    zs = sorted(zs, reverse=True)
+    bits = [int(wires[z]) for z in zs]
+    bits = ''.join(str(bit) for bit in bits)
+    return int(bits, base=2)
     pass
 
 
