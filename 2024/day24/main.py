@@ -80,7 +80,27 @@ def swap(gates, a, b):
     return gg
 
 
-# Full adder circuit:
+def graphviz(gates):
+    print('digraph G {')
+    for gate in gates:
+        shape = 'box'
+        if gate[1] == 'XOR':
+            shape = 'doublecircle'
+        elif gate[1] == 'OR':
+            shape = 'circle'
+        elif gate[1] == 'AND':
+            shape = 'diamond'
+
+        print('{} [label="{}", shape="{}"]'.format(gate[3], gate[1] + ' ' + gate[3], shape))
+        print('{} -> {}'.format(gate[0], gate[3]))
+        print('{} -> {}'.format(gate[2], gate[3]))
+    print('}')
+
+
+# Half Adder:
+# https://circuitdigest.com/sites/default/files/projectimage_tut/Half-Adder-Circuit-and-Its-Construction.png
+#
+# Full Adder:
 # https://circuitdigest.com/sites/default/files/projectimage_tut/Full-Adder-Circuit.png
 #
 # Assumptions:
@@ -89,7 +109,25 @@ def swap(gates, a, b):
 # 3. Every zN output must come from a XOR
 def part2(lines):
     wires, gates = parse(lines)
+    #graphviz(gates)
+    #return
 
+    # solved via manual inspection of the circuit graph
+    swaps = [
+        # 16
+        'z16', 'hmk',
+        # 20
+        'z20', 'fhp',
+        # 27
+        'rvf', 'tpc',
+        # 33
+        'z33', 'fcd',
+    ]
+
+    return ','.join(sorted(swaps))
+
+    # x00, y00, and z00 are a half adder
+    # all others are full adders
     all_swapped = set()
     for i in range(45):
         x = 'x{:02d}'.format(i)
