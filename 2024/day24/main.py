@@ -1,4 +1,4 @@
-from collections import deque
+from collections import defaultdict, deque
 import fileinput
 import itertools
 
@@ -18,9 +18,13 @@ def parse(lines):
 
 
 def solve(wires, gates):
+    tries = 0
     wires = dict(wires)
     gates = deque(gates)
     while gates:
+        tries += 1
+        if tries >= 10000:
+            return {}
         gate = gates.popleft()
         a, op, b, c = gate
         if a not in wires or b not in wires:
@@ -49,8 +53,88 @@ def part1(lines):
     return z
 
 
+def find_gate(gates, a=None, op=None, b=None, c=None):
+    preds = []
+    if a is not None:
+        preds.append(lambda g: g[0] == a or g[2] == a)
+    if op is not None:
+        preds.append(lambda g: g[1] == op)
+    if b is not None:
+        preds.append(lambda g: g[2] == b or g[0] == b)
+    if c is not None:
+        preds.append(lambda g: g[3] == c)
+
+    for gate in gates:
+        if all(pred(gate) for pred in preds):
+            return gate
+
+
+def swap(gates, a, b):
+    gg = set(gates)
+    aa = (a[0], a[1], a[2], b[3])
+    bb = (b[0], b[1], b[2], a[3])
+    gg.remove(a)
+    gg.remove(b)
+    gg.add(aa)
+    gg.add(bb)
+    return gg
+
+
+# Full adder circuit:
+# https://circuitdigest.com/sites/default/files/projectimage_tut/Full-Adder-Circuit.png
+#
+# Assumptions:
+# 1. Every xN and yN input must lead into a XOR
+# 2. Every xN and yN input must lead into an AND
+# 3. Every zN output must come from a XOR
 def part2(lines):
     wires, gates = parse(lines)
+
+    all_swapped = set()
+    for i in range(45):
+        x = 'x{:02d}'.format(i)
+        y = 'y{:02d}'.format(i)
+        z = 'z{:02d}'.format(i)
+
+        # x XOR y -> mid (not z)
+        in_xor = find_gate(gates, a=x, op='XOR', b=y)
+        if in_xor[3][0] == 'z':
+            all_swapped.add(in_xor)
+
+        # x AND y -> out_or (not z)
+        in_and = find_gate(gates, a=x, op='AND', b=y)
+        if in_and[3][0] == 'z':
+            all_swapped.add(in_and)
+
+        # mid XOR carry -> z
+        out_xor = find_gate(gates, a=in_xor[3], op='XOR', c=z)
+        if not out_xor:
+            # the swapped gate will have an output of z
+            swapped = find_gate(gates, c=z)
+            assert swapped is not None
+            all_swapped.add(swapped)
+
+        mid = find_gate(gates, a=in_xor[3], op='AND')
+        if not mid:
+            # if mid can't be found, in_xor's output must be wrong
+            all_swapped.add(in_xor)
+
+        # in_and OR mid -> carry
+        out_or = find_gate(gates, a=in_and[3], op='OR')
+        if not out_or:
+            # if out_or can't be found, in_and's output must be wrong
+            all_swapped.add(in_and)
+
+        print('Adder {}'.format(i))
+        print('in_xor', in_xor)
+        print('in_and', in_and)
+        print('mid', mid)
+        print('out_xor', out_xor)
+        print('out_or', out_or)
+        print()
+
+    import pprint
+    pprint.pprint(all_swapped)
 
     xs = [w for w in wires if w[0] == 'x']
     xs = sorted(xs, reverse=True)
@@ -65,6 +149,24 @@ def part2(lines):
     y = int(y, base=2)
 
     print('{} + {} = {}'.format(x, y, x + y))
+
+    for gs in itertools.permutations(all_swapped):
+        p00, p01, p10, p11, p20, p21, p30, p31 = gs
+        maybe_gates = swap(gates, p00, p01)
+        maybe_gates = swap(maybe_gates, p10, p11)
+        maybe_gates = swap(maybe_gates, p20, p21)
+        maybe_gates = swap(maybe_gates, p30, p31)
+        maybe_wires = solve(wires, maybe_gates)
+        if not maybe_wires:
+            continue
+
+        zs = [wire for wire in maybe_wires if wire[0] == 'z']
+        zs = sorted(zs, reverse=True)
+        zs = [int(maybe_wires[z]) for z in zs]
+        z = ''.join(str(bit) for bit in zs)
+        z = int(z, base=2)
+        if z == x + y:
+            return gs
 
 
 if __name__ == '__main__':
