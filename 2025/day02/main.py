@@ -1,7 +1,18 @@
 import fileinput
+import itertools
 import re
 
-from more_itertools import chunked
+
+# https://docs.python.org/3/library/itertools.html#itertools.batched
+def batched(iterable, n, *, strict=False):
+    # batched('ABCDEFG', 2) → AB CD EF G
+    if n < 1:
+        raise ValueError('n must be at least one')
+    iterator = iter(iterable)
+    while batch := tuple(itertools.islice(iterator, n)):
+        if strict and len(batch) != n:
+            raise ValueError('batched(): incomplete batch')
+        yield batch
 
 
 def parse(lines):
@@ -41,8 +52,8 @@ def part2(lines):
         for i in range(start, end+1):
             s = str(i)
             l = len(s)
-            for j in range(l//2 + 1):
-                cs = [''.join(chunk) for chunk in chunked(s, j)]
+            for j in range(1, l//2 + 1):
+                cs = [''.join(b) for b in batched(s, j)]
                 if len(set(cs)) == 1:
                     total += i
                     break
