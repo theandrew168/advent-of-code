@@ -1,4 +1,5 @@
 import fileinput
+import functools
 
 
 def part1(lines):
@@ -58,6 +59,69 @@ def part2(lines):
     return total
 
 
+def solve_dp(dp, line, i, used):
+    # base case: we reached the desired length
+    if used == 12:
+        return 0
+
+    # if at end of the line but NOT solved, invalidate this path
+    # with a large, negative number
+    if i >= len(line):
+        return -10**20
+
+    # check if we've already seen this (index, chars used) value
+    key = (i, used)
+    if key in dp:
+        return dp[key]
+
+    # calc score of picking this character
+    picked = 10**(11-used) * int(line[i]) + solve_dp(dp, line, i+1, used+1)
+    # calc score of NOT picking this character
+    skipped = solve_dp(dp, line, i+1, used)
+
+    # pick the highest of the "picked or skipped" paths
+    ans = max(picked, skipped)
+    dp[key] = ans
+    return ans
+
+
+@functools.cache
+def solve_memo(line, i, used):
+    # base case: we reached the desired length
+    if used == 12:
+        return 0
+
+    # if at end of the line but NOT solved, invalidate this path
+    # with a large, negative number
+    if i >= len(line):
+        return -10**20
+
+    # calc score of picking this character
+    picked = 10**(11-used) * int(line[i]) + solve_memo(line, i+1, used+1)
+    # calc score of NOT picking this character
+    skipped = solve_memo(line, i+1, used)
+
+    # pick the highest of the "picked or skipped" paths
+    ans = max(picked, skipped)
+    return ans
+
+
+def part2_dp(lines):
+    total = 0
+    for line in lines:
+        # use dp to track the unique (index, chars used) values
+        total += solve_dp({}, line, 0, 0)
+    return total
+
+
+def part2_memo(lines):
+    total = 0
+    for line in lines:
+        # use memo to track the unique (line, index, chars used) values
+        total += solve_memo(line, 0, 0)
+    return total
+
+
 if __name__ == '__main__':
     lines = []
     for line in fileinput.input():
@@ -65,3 +129,5 @@ if __name__ == '__main__':
 
     print(part1(lines))
     print(part2(lines))
+    print(part2_dp(lines))
+    print(part2_memo(lines))
