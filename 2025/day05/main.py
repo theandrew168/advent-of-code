@@ -32,50 +32,68 @@ def part1(lines):
     return total
 
 
+def overlaps(rs, n):
+    os = []
+
+    lo, hi = n
+    for rlo, rhi in rs:
+        # no overlap, skip
+        if lo > rhi or hi < rlo:
+            continue
+        # same, add
+        if lo == rlo and hi == rhi:
+            os.append((rlo, rhi))
+            continue
+        # subset, add
+        if lo >= rlo and hi <= rhi:
+            os.append((rlo, rhi))
+            continue
+        # superset, add
+        if lo <= rlo and hi >= rhi:
+            os.append((rlo, rhi))
+            continue
+        # overlap, add
+        os.append((rlo, rhi))
+
+    if os:
+        os.append(n)
+
+    return os
+
+
+# [(3, 5), (10, 14), (16, 20)] + (12, 18) = [(3, 5), (10-20)]
+# split into overlaps and non-overlaps
+# rs = non-overlaps + best(overlaps)
+def merge(rs, n):
+    os = overlaps(rs, n)
+    if os:
+        nrs = [r for r in rs if r not in os]
+        nlo = min(r[0] for r in os)
+        nhi = max(r[1] for r in os)
+        nrs.append((nlo, nhi))
+        return nrs
+    else:
+        nrs = [r for r in rs]
+        nrs.append(n)
+        return nrs
+
+
 def part2(lines):
     ranges, _= parse(lines)
 
-    rs = []
-    for lo, hi in ranges:
-        print(lo, hi, rs)
-        # detect and merge overlapping ranges
-        merged = False
-        for i in range(len(rs)):
-            rlo, rhi = rs[i]
-            # no overlap, skip
-            if lo > rhi or hi < rlo:
-                continue
-            # same range, skip
-            if lo == rlo and hi == rhi:
-                merged = True
-                continue
-            # subset, skip
-            if lo >= rlo and hi <= rhi:
-                merged = True
-                continue
-            # superset, replace
-            if lo <= rlo and hi >= rhi:
-                rs[i] = (lo, hi)
-                merged = True
-            # overlap, replace
-            nlo = min(lo, rlo)
-            nhi = max(hi, rhi)
-            rs[i] = (nlo, nhi)
-            merged = True
-
-        # otherwise, add the new range to the list
-        if not merged:
-            rs.append((lo, hi))
+    rs = [ranges[0]]
+    for r in ranges[1:]:
+        rs = merge(rs, r)
+        print(rs)
 
     print(rs)
 
     total = 0
     for lo, hi in rs:
-        total += hi - lo
+        total += hi - lo + 1
     return total
 
 
-# 385836385941925 high
 if __name__ == '__main__':
     lines = []
     for line in fileinput.input():
