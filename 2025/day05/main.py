@@ -40,28 +40,18 @@ def overlaps(rs, n):
         # no overlap, skip
         if lo > rhi or hi < rlo:
             continue
-        # same, add
-        if lo == rlo and hi == rhi:
-            os.append((rlo, rhi))
-            continue
-        # subset, add
-        if lo >= rlo and hi <= rhi:
-            os.append((rlo, rhi))
-            continue
-        # superset, add
-        if lo <= rlo and hi >= rhi:
-            os.append((rlo, rhi))
-            continue
         # overlap, add
-        os.append((rlo, rhi))
+        else:
+            os.append((rlo, rhi))
 
+    # if we have overlaps (with the new element), add the new element
     if os:
         os.append(n)
 
     return os
 
 
-# [(3, 5), (10, 14), (16, 20)] + (12, 18) = [(3, 5), (10-20)]
+# [(3, 5), (10, 14), (16, 20)] + (12, 18) = [(3, 5), (10, 20)]
 # split into overlaps and non-overlaps
 # rs = non-overlaps + best(overlaps)
 def merge(rs, n):
@@ -84,9 +74,6 @@ def part2(lines):
     rs = [ranges[0]]
     for r in ranges[1:]:
         rs = merge(rs, r)
-        print(rs)
-
-    print(rs)
 
     total = 0
     for lo, hi in rs:
