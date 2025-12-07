@@ -1,4 +1,5 @@
 import fileinput
+import functools
 
 # Would sorting the input help?
 # Is this a DP problem that can be solved with a memo cache (like fib)?
@@ -31,65 +32,42 @@ def part2(lines):
     w = len(grid[0])
     h = len(grid)
 
-    # buttom-up DP
-    dp = {}
-#    parent = {}
+    # top-down memo DP
+    DP = {}
+    def paths(x, y):
+        # check the cache first
+        if (x, y) in DP:
+            return DP[(x, y)]
 
-    def parents(n):
+        # find and count parents
         cnt = 0
-
-        x, y = n
-        y -= 1
-        while y >= 0:
-            if grid[y][x] == 'S':
-                return 1
-            if grid[y][x] == '^':
+        for yy in range(y-1, -1, -1):
+            # base case, initial timeline
+            if grid[yy][x] == 'S':
+                cnt = 1
                 break
-            l = grid[y][x-1]
-            r = grid[y][x+1]
-            if l == '^':
-                cnt += 1
-            if r == '^':
-                cnt += 1
 
+            # unreachable parent
+            if grid[yy][x] == '^':
+                break
+
+            # check for left path
+            if x-1 >= 0 and grid[yy][x-1] == '^':
+                cnt += paths(x-1, yy)
+
+            # check for right path
+            if x+1 < w and grid[yy][x+1] == '^':
+                cnt += paths(x+1, yy)
+
+        DP[(x, y)] = cnt
         return cnt
 
-#    def trace(n):
-#        curr = n
-#        while True:
-#            p = parent[curr]
-#            if p in dp:
-#                return dp[p]
-#            curr = p
+    total = 0
 
-    total = 1
-    for y in range(h):
-        for x in range(w):
-            prev = grid[y-1][x]
-            curr = grid[y][x]
+    y = h - 1
+    for x in range(w):
+        total += paths(x, y)
 
-            # base case
-            if curr == 'S':
-                dp[(x, y)] = 1
-
-            if curr == '.' and prev in ('S', '|'):
-                parent[(x, y)] = (x, y-1)
-
-                grid[y][x] = '|'
-            elif curr == '^' and prev == '|':
-                parent[(x, y)] = (x, y-1)
-                parent[(x-1, y)] = (x, y)
-                parent[(x+1, y)] = (x, y)
-
-                score = trace((x, y)) * 2
-                dp[(x, y)] = score
-                total += score
-
-                grid[y][x-1] = '|'
-                grid[y][x+1] = '|'
-
-    from pprint import pprint
-    pprint(dp)
     return total
 
 
