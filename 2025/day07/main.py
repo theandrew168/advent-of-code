@@ -32,13 +32,9 @@ def part2(lines):
     w = len(grid[0])
     h = len(grid)
 
-    # top-down memo DP
-    DP = {}
+    # top-down DP (memo)
+    @functools.cache
     def paths(x, y):
-        # check the cache first
-        if (x, y) in DP:
-            return DP[(x, y)]
-
         # find and count parents
         cnt = 0
         for yy in range(y-1, -1, -1):
@@ -59,15 +55,11 @@ def part2(lines):
             if x+1 < w and grid[yy][x+1] == '^':
                 cnt += paths(x+1, yy)
 
-        DP[(x, y)] = cnt
         return cnt
 
     total = 0
-
-    y = h - 1
     for x in range(w):
-        total += paths(x, y)
-
+        total += paths(x, h-1)
     return total
 
 
