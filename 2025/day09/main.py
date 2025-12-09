@@ -1,6 +1,8 @@
 import fileinput
 import itertools
 
+from shapely.geometry import Point, Polygon
+
 # Would sorting the input help?
 # Is this a DP problem that can be solved with a memo cache (like fib)?
 # Is this a path finding problem (dijkstra's, A*, etc)?
@@ -33,7 +35,28 @@ def part1(lines):
 
 
 def part2(lines):
-    pass
+    pts = parse(lines)
+    poly = Polygon(pts)
+
+    best = 0
+    for a, b in itertools.combinations(pts, 2):
+        ax, ay = a
+        bx, by = b
+
+        rect = Polygon([
+            a,             # TL
+            (a[0], b[1]),  # BL
+            b,             # BR
+            (b[0], a[1]),  # TR
+        ])
+        if not poly.contains(rect):
+            continue
+
+        ar = area(a, b)
+        if ar > best:
+            best = ar
+
+    return best
 
 
 if __name__ == '__main__':
