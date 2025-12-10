@@ -84,19 +84,17 @@ def solve2(dest, buttons):
     pq = PriorityQueue()
     pq.put((0, 0, start))
     while not pq.empty():
-        steps, cost, jolts = pq.get()
+        cost, steps, jolts = pq.get()
         for button in buttons:
             new_jolts = press2(jolts, button)
             d = dist(dest, new_jolts)
-            new_cost = cost + 1 + d
             new_steps = steps + 1
-            print(new_steps, new_cost, new_jolts, dest)
-            input()
+            new_cost = new_steps * d
             if new_jolts == dest:
                 return new_steps
             if new_jolts not in costs or new_cost < costs[new_jolts]:
                 costs[new_jolts] = new_cost
-                pq.put((new_steps, new_cost, new_jolts))
+                pq.put((new_cost, new_steps, new_jolts))
 
 
 def part1(lines):
