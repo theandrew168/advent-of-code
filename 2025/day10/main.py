@@ -5,6 +5,8 @@ import itertools
 from pprint import pprint
 from queue import PriorityQueue
 
+import z3
+
 # Would sorting the input help?
 # Is this a DP problem that can be solved with a memo cache (like fib)?
 # Is this a path finding problem (dijkstra's, A*, etc)?
@@ -75,26 +77,60 @@ def dist(dest, jolts):
     return dist
 
 
+# J0123 B0   1     2   3     4     5  
+# [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
+# J0 = B4 + B5
+# J1 = B1 + B5
+# ...
+# J0 = 3
+# J1 = 5
+# ...
+# What is the sum of B0..Bn?
+
+# [j0 == b4 + b5,
+#  j1 == b1 + b5,
+#  j2 == b2 + b3 + b4,
+#  j3 == b0 + b1 + b3,
+#  j0 == 3,
+#  j1 == 5,
+#  j2 == 4,
+#  j3 == 7,
+#  b0 >= 0,
+#  b1 >= 0,
+#  b2 >= 0,
+#  b3 >= 0,
+#  b4 >= 0,
+#  b5 >= 0]
+
 def solve2(dest, buttons):
-    start = tuple([0] * len(dest))
+    J = [z3.Int('j{}'.format(i)) for i in range(len(dest))]
+    B = [z3.Int('b{}'.format(i)) for i in range(len(buttons))]
 
-    costs = {}
-    costs[start] = 0
+    equations = []
+    for j in range(len(J)):
+        bs = [i for i, b in enumerate(buttons) if j in b]
+        equations.append(J[j] == z3.Sum(B[b] for b in bs))
 
-    pq = PriorityQueue()
-    pq.put((0, 0, start))
-    while not pq.empty():
-        cost, steps, jolts = pq.get()
-        for button in buttons:
-            new_jolts = press2(jolts, button)
-            d = dist(dest, new_jolts)
-            new_steps = steps + 1
-            new_cost = new_steps * d
-            if new_jolts == dest:
-                return new_steps
-            if new_jolts not in costs or new_cost < costs[new_jolts]:
-                costs[new_jolts] = new_cost
-                pq.put((new_cost, new_steps, new_jolts))
+    problem = []
+    for i, j in enumerate(dest):
+        problem.append(J[i] == j)
+    for i in range(len(B)):
+        problem.append(B[i] >= 0)
+
+    total = None
+
+    s = z3.Solver()
+    s.add(equations + problem)
+    while s.check() == z3.sat:
+        m = s.model()
+        score = sum(m[b].as_long() for b in B)
+        if not total or score < total:
+            total = score
+        # Invalidate this solution and try again (until not sat)
+        cs = [b != s.model()[b] for b in B]
+        s.add(z3.Or(cs))
+
+    return total
 
 
 def part1(lines):
@@ -109,12 +145,11 @@ def part2(lines):
     total = 0
     for line in lines:
         l, b, j = parse(line)
-        score = solve2(j, b)
-        print(score)
-        total += score
+        total += solve2(j, b)
     return total
 
 
+# high 15401
 if __name__ == '__main__':
     lines = []
     for line in fileinput.input():
