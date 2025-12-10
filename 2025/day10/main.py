@@ -117,20 +117,15 @@ def solve2(dest, buttons):
     for i in range(len(B)):
         problem.append(B[i] >= 0)
 
-    total = None
-
-    s = z3.Solver()
+    s = z3.Optimize()
     s.add(equations + problem)
-    while s.check() == z3.sat:
-        m = s.model()
-        score = sum(m[b].as_long() for b in B)
-        if not total or score < total:
-            total = score
-        # Invalidate this solution and try again (until not sat)
-        cs = [b != s.model()[b] for b in B]
-        s.add(z3.Or(cs))
+    s.minimize(sum(B))
 
-    return total
+    if s.check() != z3.sat:
+        raise SystemExit('satty not satty')
+
+    m = s.model()
+    return sum(m[b].as_long() for b in B)
 
 
 def part1(lines):
@@ -149,7 +144,6 @@ def part2(lines):
     return total
 
 
-# high 15401
 if __name__ == '__main__':
     lines = []
     for line in fileinput.input():
