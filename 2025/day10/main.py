@@ -57,26 +57,6 @@ def solve1(dest, buttons):
                 pq.put((new_cost, new_lights))
 
 
-def press2(jolts, button):
-    new_jolts = []
-    for i, j in enumerate(jolts):
-        if i in button:
-            new_jolts.append(j+1)
-        else:
-            new_jolts.append(j)
-    return tuple(new_jolts)
-
-
-def dist(dest, jolts):
-    dist = 0
-    for i in range(len(dest)):
-        diff = dest[i] - jolts[i]
-        if diff < 0:
-            return 999999999999
-        dist += diff
-    return dist
-
-
 # J0123 B0   1     2   3     4     5  
 # [.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
 # J0 = B4 + B5
