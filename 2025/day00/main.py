@@ -1,4 +1,4 @@
-from collections import Counter, deque
+from collections import Counter, defaultdict, deque
 import fileinput
 import functools
 import itertools
