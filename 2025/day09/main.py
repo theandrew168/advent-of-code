@@ -1,5 +1,7 @@
+from collections import defaultdict
 import fileinput
 import itertools
+from pprint import pprint
 
 from shapely.geometry import Point, Polygon
 
@@ -9,6 +11,7 @@ from shapely.geometry import Point, Polygon
 # Is this a system of equations (z3, etc)?
 # Is this a complex graph problem (networkx, etc)?
 
+
 def parse(lines):
     pts = []
     for line in lines:
@@ -16,6 +19,7 @@ def parse(lines):
         x, y = int(x), int(y)
         pts.append((x, y))
     return pts
+
 
 def area(a, b):
     w = abs(a[0]-b[0]) + 1
@@ -53,6 +57,62 @@ def part2(lines):
             continue
 
         ar = area(a, b)
+        if ar >= best:
+            best = ar
+
+    return best
+
+
+def line_intersects_rect(a, b, top, bottom, left, right):
+    ax, ay = a
+    bx, by = b
+
+    # above
+    if ay <= top and by <= top:
+        return False
+
+    # below
+    if ay >= bottom and by >= bottom:
+        return False
+
+    # left
+    if ax <= left and bx <= left:
+        return False
+
+    # right
+    if ax >= right and bx >= right:
+        return False
+
+    return True
+
+
+def part2_natty(lines):
+    best = 0
+
+    pts = parse(lines)
+
+    n = len(pts)
+    segs = [(pts[i], pts[(i+1)%n]) for i in range(n)]
+
+    for a, b in itertools.combinations(pts, 2):
+        ax, ay = a
+        bx, by = b
+
+        top = min(ay, by)
+        bottom = max(ay, by)
+        left = min(ax, bx)
+        right = max(ax, bx)
+
+        valid = True
+        for seg in segs:
+            sa, sb = seg
+            if line_intersects_rect(sa, sb, top, bottom, left, right):
+                valid = False
+                break
+        if not valid:
+            continue
+
+        ar = area(a, b)
         if ar > best:
             best = ar
 
@@ -66,3 +126,4 @@ if __name__ == '__main__':
 
     print(part1(lines))
     print(part2(lines))
+    print(part2_natty(lines))
